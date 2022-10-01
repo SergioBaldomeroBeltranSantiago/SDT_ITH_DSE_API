@@ -38,12 +38,12 @@ app.post("/Login", function (req, res) {
           res.sendStatus(200);
         } else {
           //Si no coinciden, tronasion
-          res.sendStatus(403);
+          res.sendStatus(400);
         }
       });
     } else {
       //Si no existe, tronasion
-      res.sendStatus(403);
+      res.sendStatus(400);
     }
   });
 });
