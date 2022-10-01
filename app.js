@@ -21,9 +21,11 @@ app.get("/", function (req, res) {
   res.send("Patata");
 });
 
-//Login?
-app.post("/", function (req, res) {
+//Login
+app.post("/Login", function (req, res) {
+  //Buscar si existe el registro de usuario
   Usuario.findByPk(req.body.id_number).then((result) => {
+    //Si si existe, checar si coincide usuario y contraseña
     if (result != null) {
       Usuario.count({
         where: {
@@ -32,13 +34,16 @@ app.post("/", function (req, res) {
         },
       }).then((consult) => {
         if (consult>0) {
-          res.send("Success");
+          //Si si coinciden, pasa
+          res.sendStatus(200);
         } else {
-          res.send("Incorrect password");
+          //Si no coinciden, tronasion
+          res.sendStatus(403);
         }
       });
     } else {
-      res.send("User doesnt exists");
+      //Si no existe, tronasion
+      res.sendStatus(403);
     }
   });
 });
