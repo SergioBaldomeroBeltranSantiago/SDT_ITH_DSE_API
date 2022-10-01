@@ -33,17 +33,17 @@ app.post("/Login", function (req, res) {
           contraseña: req.body.password,
         },
       }).then((consult) => {
-        if (consult>0) {
+        if (consult > 0) {
           //Si si coinciden, pasa
-          res.sendStatus(200);
+          res.send({ Code: 1 });
         } else {
           //Si no coinciden, tronasion
-          res.sendStatus(400);
+          res.send({ Code: -1 });
         }
       });
     } else {
       //Si no existe, tronasion
-      res.sendStatus(400);
+      res.send({ Code: 0 });
     }
   });
 });
