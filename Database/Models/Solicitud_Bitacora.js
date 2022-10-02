@@ -1,9 +1,8 @@
 const { Model, DataTypes } = require("sequelize");
-const { maximumLength } = require("tedious/lib/data-types/varchar");
 const sequelize = require("../db");
 
-class Solicitudes_Bitacora extends Model {}
-Solicitudes_Bitacora.init(
+class Solicitud_Bitacora extends Model {}
+Solicitud_Bitacora.init(
     {
         solicitud_Ref: {
         type: DataTypes.STRING(10),
@@ -18,11 +17,11 @@ Solicitudes_Bitacora.init(
         allowNull: false
     },
     retroalimentacion: {
-        type: DataTypes.STRING(maximumLength),
+        type: DataTypes.STRING,
         allowNull: false
     }
     },
     { sequelize, modelName: "Solicitudes_Bitacora", tableName: "Solicitudes_Bitacora", timestamps: false }
 );
 
-module.exports = Solicitudes_Bitacora;
+module.exports = Solicitud_Bitacora;

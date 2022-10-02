@@ -14,7 +14,7 @@ Tramite.init(
         allowNull: false
     }
     },
-    { sequelize, modelName: "Tramite", tableName: "Tramite", timestamps: false }
+    { sequelize, modelName: "Tramite", tableName: "Tramites", timestamps: false }
 );
 
 module.exports = Tramite;
