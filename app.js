@@ -14,7 +14,7 @@ app.use(cors());
 
 //Middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 
 //Rutas
 app.get("/", function (req, res) {
@@ -45,6 +45,17 @@ app.post("/Login", function (req, res) {
       //Si no existe, tronasion
       res.send({ Code: 0 });
     }
+  });
+});
+
+//Conseguir datos del usuario activo en sesión, si es admin
+app.post("/AdminInfo", function (req, res) {
+  console.log(req.body.loginID);
+  Usuario.findAll({
+    attributes: ["matricula", "nombre_C", "correo_e"],
+    where: { matricula: req.body.loginID },
+  }).then((consult) => {
+    res.send(consult);
   });
 });
 
