@@ -67,6 +67,7 @@ app.listen(PORT, function () {
   sequelize
     .authenticate()
     .then(() => {
+      sequelize.sync({ force: true });
       console.log("Conectao");
     })
     .catch((error) => console.log("No conectao pq: ", error));
