@@ -6,22 +6,6 @@ const Tramite = require("./Tramite");
 class Tramite_M extends Model {}
 Tramite_M.init(
   {
-    id_TM: {
-      type: DataTypes.STRING(10),
-      allowNull: false,
-      references: {
-        model: Tramite,
-        key: id_T,
-      },
-    },
-    imagen: {
-      type: DataTypes.STRING(10),
-      allowNull: false,
-      references: {
-        model: Imagen,
-        key: id_I,
-      },
-    },
     texto: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -42,5 +26,25 @@ Tramite_M.init(
     timestamps: false,
   }
 );
+
+Tramite.hasMany(Tramite_M, {
+  foreignKey: {
+    name: "id_TM",
+    allowNull: false,
+  },
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+Imagen.hasMany(Tramite_M, {
+  foreignKey: {
+    name: "imagen",
+    allowNull: false,
+  },
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+Tramite_M.removeAttribute("id");
 
 module.exports = Tramite_M;

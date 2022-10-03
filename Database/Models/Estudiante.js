@@ -5,14 +5,6 @@ const Usuario = require("./Usuario");
 class Estudiante extends Model {}
 Estudiante.init(
   {
-    matricula_E: {
-      type: DataTypes.STRING(9),
-      allowNull: false,
-      references: {
-        model: Usuario,
-        key: matricula,
-      },
-    },
     carrera: {
       type: DataTypes.STRING(16),
       allowNull: false,
@@ -29,5 +21,16 @@ Estudiante.init(
     timestamps: false,
   }
 );
+
+Usuario.hasOne(Estudiante, {
+  foreignKey: {
+    name: "matricula_E",
+    allowNull: false,
+  },
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+Estudiante.removeAttribute("id");
 
 module.exports = Estudiante;

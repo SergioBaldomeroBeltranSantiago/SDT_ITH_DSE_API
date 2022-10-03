@@ -1,17 +1,10 @@
 const { Model, DataTypes } = require("sequelize");
 const sequelize = require("../db");
+const Solicitud = require("./Solicitud");
 
 class Documento extends Model {}
 Documento.init(
   {
-    solicitud: {
-      type: DataTypes.STRING(10),
-      allowNull: false,
-      references: {
-        model: Solicitud,
-        key: id_S,
-      },
-    },
     nombre_D: {
       type: DataTypes.STRING(40),
       allowNull: false,
@@ -28,5 +21,16 @@ Documento.init(
     timestamps: false,
   }
 );
+
+Solicitud.hasMany(Documento, {
+  foreignKey: {
+    name: "Solicitud",
+    allowNull: false,
+  },
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+Documento.removeAttribute("id");
 
 module.exports = Documento;

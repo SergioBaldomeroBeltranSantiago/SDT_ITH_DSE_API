@@ -2,6 +2,7 @@ const { Model, DataTypes } = require("sequelize");
 const sequelize = require("../db");
 const Estudiante = require("./Estudiante");
 const Tramite = require("./Tramite");
+const Usuario = require("./Usuario");
 
 class Solicitud extends Model {}
 Solicitud.init(
@@ -10,22 +11,6 @@ Solicitud.init(
       type: DataTypes.STRING(10),
       primaryKey: true,
       allowNull: false,
-    },
-    estudiante: {
-      type: DataTypes.STRING(9),
-      allowNull: false,
-      references: {
-        model: Estudiante,
-        key: matricula_E,
-      },
-    },
-    tramite: {
-      type: DataTypes.STRING(10),
-      allowNull: false,
-      references: {
-        model: Tramite,
-        key: id_T,
-      },
     },
     fecha_Sol: {
       type: DataTypes.DATE,
@@ -51,5 +36,23 @@ Solicitud.init(
     timestamps: false,
   }
 );
+
+Usuario.hasMany(Solicitud, {
+  foreignKey: {
+    name: "estudiante",
+    allowNull: false,
+  },
+  onUpdate: "NO ACTION",
+  onDelete: "NO ACTION",
+});
+
+Tramite.hasMany(Solicitud, {
+  foreignKey: {
+    name: "tramite",
+    allowNull: false,
+  },
+  onUpdate: "CASCADE",
+  onDelete: "CASCADE",
+});
 
 module.exports = Solicitud;
