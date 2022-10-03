@@ -13,11 +13,11 @@ Solicitud.init(
       allowNull: false,
     },
     fecha_Sol: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     fecha_Act: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     estatus: {
