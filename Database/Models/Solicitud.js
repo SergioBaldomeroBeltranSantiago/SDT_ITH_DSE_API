@@ -42,11 +42,29 @@ Usuario.hasMany(Solicitud, {
     name: "estudiante",
     allowNull: false,
   },
-  onUpdate: "NO ACTION",
-  onDelete: "NO ACTION",
+  onUpdate: "CASCADE",
+  onDelete: "CASCADE",
+});
+
+Solicitud.belongsTo(Usuario, {
+  foreignKey: {
+    name: "estudiante",
+    allowNull: false,
+  },
+  onUpdate: "CASCADE",
+  onDelete: "CASCADE",
 });
 
 Tramite.hasMany(Solicitud, {
+  foreignKey: {
+    name: "tramite",
+    allowNull: false,
+  },
+  onUpdate: "CASCADE",
+  onDelete: "CASCADE",
+});
+
+Solicitud.belongsTo(Tramite, {
   foreignKey: {
     name: "tramite",
     allowNull: false,
