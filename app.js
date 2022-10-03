@@ -68,10 +68,10 @@ app.post("/AdminInfo", function (req, res) {
 
 //Conseguir datos del usuario activo en sesión, si es estudiante
 app.post("/StudentInfo", function (req, res) {
-  Estudiante.findAll({
-    attributes: ["matricula_E", "carrera", "semestre"],
+  Usuario.findAll({
+    attributes: ["matricula", "nombre_C", "correo_e"],
     where: { matricula: req.body.loginID },
-    include: [{ model: Usuario, attributes: ["nombre_C", "correo_e"] }],
+    include: [{ model: Estudiante, attributes: ["carrera", "semestre"] }],
   }).then((consult) => {
     res.send(consult);
   });
