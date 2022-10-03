@@ -79,7 +79,6 @@ app.post("/StudentInfo", function (req, res) {
 
 //Conseguir la lista de Solicitudes en el sistema, filtrada según el estatus
 app.post("/RequestList", function (req, res) {
-  console.log(req.body);
   Solicitud.findAll({
     attributes: [
       "id_S",
@@ -110,7 +109,7 @@ app.listen(PORT, function () {
   sequelize
     .authenticate()
     .then(() => {
-      sequelize.sync().then(() => {
+      sequelize.sync({ alter: true }).then(() => {
         console.log("Conectao");
       });
     })
