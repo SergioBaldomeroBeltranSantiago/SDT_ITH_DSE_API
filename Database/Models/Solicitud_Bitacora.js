@@ -33,6 +33,4 @@ Solicitud.hasMany(Solicitud_Bitacora, {
   },
 });
 
-Solicitud_Bitacora.belongsTo(Solicitud);
-
 module.exports = Solicitud_Bitacora;

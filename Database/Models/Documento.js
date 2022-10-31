@@ -24,11 +24,9 @@ Documento.init(
 
 Solicitud.hasMany(Documento, {
   foreignKey: {
-    name: "Solicitud_Asociada",
+    name: "solicitud asociada",
     allowNull: false,
   },
 });
-
-Documento.belongsTo(Solicitud);
 
 module.exports = Documento;

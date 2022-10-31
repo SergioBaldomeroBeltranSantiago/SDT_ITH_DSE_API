@@ -28,11 +28,9 @@ Tramite_M.init(
 
 Tramite.hasMany(Tramite_M, {
   foreignKey: {
-    name: "id_TM",
+    name: "tramite",
     allowNull: false,
   },
 });
-
-Tramite_M.belongsTo(Tramite);
 
 module.exports = Tramite_M;

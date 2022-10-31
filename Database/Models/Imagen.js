@@ -20,10 +20,8 @@ Imagen.init(
 Imagen.hasMany(Tramite_M, {
   foreignKey: {
     name: "imagen",
-    allowNull: false,
+    allowNull: true,
   },
 });
-
-Tramite_M.belongsTo(Imagen);
 
 module.exports = Imagen;
