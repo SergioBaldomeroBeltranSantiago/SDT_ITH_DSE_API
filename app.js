@@ -166,6 +166,18 @@ app.post("/RequestUserApplication", function (req, res) {
   });
 });
 
+//Registrar una nueva solicitud
+app.post("/NewUserApplication", function (req, res) {
+  Solicitud.create({
+    fecha_Sol: req.body.fecha_inicio,
+    fecha_Act: req.body.fecha_act,
+    estatus: 1,
+    retroalimentacion: req.body.retroalim,
+    estudiante: req.body.estudiante,
+    tramite: req.body.tramite,
+  });
+});
+
 //Inicializar el servidor
 app.listen(PORT, function () {
   //Conectarse a la base de datos al iniciar el servidor
