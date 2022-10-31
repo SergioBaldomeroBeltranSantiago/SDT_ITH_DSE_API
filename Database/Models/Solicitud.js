@@ -7,11 +7,6 @@ const Usuario = require("./Usuario");
 class Solicitud extends Model {}
 Solicitud.init(
   {
-    id_S: {
-      type: DataTypes.STRING(10),
-      primaryKey: true,
-      allowNull: false,
-    },
     fecha_Sol: {
       type: DataTypes.DATEONLY,
       allowNull: false,
@@ -42,8 +37,6 @@ Usuario.hasMany(Solicitud, {
     name: "estudiante",
     allowNull: false,
   },
-  onUpdate: "CASCADE",
-  onDelete: "CASCADE",
 });
 
 Solicitud.belongsTo(Usuario, {
@@ -51,8 +44,6 @@ Solicitud.belongsTo(Usuario, {
     name: "estudiante",
     allowNull: false,
   },
-  onUpdate: "CASCADE",
-  onDelete: "CASCADE",
 });
 
 Tramite.hasMany(Solicitud, {
@@ -60,8 +51,6 @@ Tramite.hasMany(Solicitud, {
     name: "tramite",
     allowNull: false,
   },
-  onUpdate: "CASCADE",
-  onDelete: "CASCADE",
 });
 
 Solicitud.belongsTo(Tramite, {
@@ -69,8 +58,6 @@ Solicitud.belongsTo(Tramite, {
     name: "tramite",
     allowNull: false,
   },
-  onUpdate: "CASCADE",
-  onDelete: "CASCADE",
 });
 
 module.exports = Solicitud;

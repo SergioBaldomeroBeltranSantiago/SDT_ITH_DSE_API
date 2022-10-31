@@ -1,6 +1,5 @@
 const { Model, DataTypes } = require("sequelize");
 const sequelize = require("../db");
-const Imagen = require("./Imagen");
 const Tramite = require("./Tramite");
 
 class Tramite_M extends Model {}
@@ -32,19 +31,8 @@ Tramite.hasMany(Tramite_M, {
     name: "id_TM",
     allowNull: false,
   },
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
 });
 
-Imagen.hasMany(Tramite_M, {
-  foreignKey: {
-    name: "imagen",
-    allowNull: false,
-  },
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
-});
-
-Tramite_M.removeAttribute("id");
+Tramite_M.belongsTo(Tramite);
 
 module.exports = Tramite_M;

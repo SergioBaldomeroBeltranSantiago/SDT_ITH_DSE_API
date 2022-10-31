@@ -1,14 +1,10 @@
 const { Model, DataTypes } = require("sequelize");
 const sequelize = require("../db");
+const Tramite_M = require("./Tramite_M");
 
 class Imagen extends Model {}
 Imagen.init(
   {
-    id_I: {
-      type: DataTypes.STRING(10),
-      allowNull: false,
-      primaryKey: true,
-    },
     nombre_I: {
       type: DataTypes.STRING(20),
       allowNull: false,
@@ -20,5 +16,14 @@ Imagen.init(
   },
   { sequelize, modelName: "Imagen", tableName: "Imagenes", timestamps: false }
 );
+
+Imagen.hasMany(Tramite_M, {
+  foreignKey: {
+    name: "imagen",
+    allowNull: false,
+  },
+});
+
+Tramite_M.belongsTo(Imagen);
 
 module.exports = Imagen;

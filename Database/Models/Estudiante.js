@@ -27,10 +27,6 @@ Usuario.hasOne(Estudiante, {
     name: "matricula_E",
     allowNull: false,
   },
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
 });
-
-Estudiante.removeAttribute("id");
 
 module.exports = Estudiante;

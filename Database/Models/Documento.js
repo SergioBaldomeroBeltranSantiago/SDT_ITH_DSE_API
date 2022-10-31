@@ -24,13 +24,11 @@ Documento.init(
 
 Solicitud.hasMany(Documento, {
   foreignKey: {
-    name: "Solicitud",
+    name: "Solicitud_Asociada",
     allowNull: false,
   },
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
 });
 
-Documento.removeAttribute("id");
+Documento.belongsTo(Solicitud);
 
 module.exports = Documento;

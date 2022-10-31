@@ -31,10 +31,8 @@ Solicitud.hasMany(Solicitud_Bitacora, {
     name: "Solicitud referente",
     allowNull: false,
   },
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
 });
 
-Solicitud_Bitacora.removeAttribute("id");
+Solicitud_Bitacora.belongsTo(Solicitud);
 
 module.exports = Solicitud_Bitacora;
