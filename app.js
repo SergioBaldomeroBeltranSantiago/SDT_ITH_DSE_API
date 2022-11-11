@@ -13,7 +13,6 @@ const Tramite_M = require("./Database/Models/Tramite_M");
 const Solicitud = require("./Database/Models/Solicitud");
 const Documento = require("./Database/Models/Documento");
 const Solicitud_Bitacora = require("./Database/Models/Solicitud_Bitacora");
-const { text } = require("express");
 
 //Definimos el puerto a utilizar
 const PORT = process.env.PORT || 3001;
