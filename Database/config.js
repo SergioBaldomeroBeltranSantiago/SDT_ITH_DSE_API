@@ -1,9 +1,9 @@
 module.exports = {
   database_config: {
-    username: "sa",
-    password: "P0k3p9rk",
-    database: "SDT_ITH_DSE",
-    host: "localhost",
-    dialect: 'mssql'
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    host: process.env.DB_HOST,
+    dialect: "mssql",
   },
 };
