@@ -26,10 +26,10 @@ app.use(express.urlencoded({ extended: true }));
 
 //Transportador de correo
 var transporter = nodemailer.createTransport({
-  service: "gmail",
+  service: process.env.MAIL_SERVICE,
   auth: {
-    user: "burnertestsdtithdse@gmail.com",
-    pass: "dedmujszupnbttro",
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASSWORD,
   },
 });
 
@@ -133,7 +133,7 @@ app.post("/RequestTransactionList", function (req, res) {
 //Enviar un correo a un destinatario
 app.post("/SendEmail", function (req, res) {
   var mailOptions = {
-    from: "burnertestsdtithdse@gmail.com",
+    from: process.env.MAIL_USER,
     to: req.body.destinatario,
     subject: "Haz solicitado con exito el trámite de " + req.body.tramite,
     text: "Aquí hay información adicional del trámite, la lista de requisitos y los documentos a llenar A COMPUTADORA",
