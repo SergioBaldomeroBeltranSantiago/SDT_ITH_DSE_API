@@ -5,6 +5,7 @@ const sequelize = require("./Database/db");
 const cors = require("cors");
 var nodemailer = require("nodemailer");
 
+//Patron GOF - Singleton
 const Usuario = require("./Database/Models/Usuario");
 const Estudiante = require("./Database/Models/Estudiante");
 const Tramite = require("./Database/Models/Tramite");
