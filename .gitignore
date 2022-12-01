@@ -35,4 +35,4 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 #Archivo de variables sensibles
-.local.env
+.env
