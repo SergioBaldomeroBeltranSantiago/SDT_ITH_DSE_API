@@ -4,6 +4,7 @@ const app = express();
 const sequelize = require("./Database/db");
 const cors = require("cors");
 var nodemailer = require("nodemailer");
+const moment = require("moment");
 
 //Patron GOF - Singleton
 const Usuario = require("./Database/Models/Usuario");
@@ -164,20 +165,26 @@ app.post("/RequestUserApplication", function (req, res) {
       },
       { model: Tramite, attributes: ["nombre_T"] },
     ],
-  }).then((consult) => {
-    res.send(consult);
-  });
+  })
+    .then((consult) => {
+      res.send(consult);
+    })
+    .catch(() => res.send({ Code: -1 }));
 });
 
 //Registrar una nueva solicitud
 app.post("/NewUserApplication", function (req, res) {
+  let fechaObject = new Date();
+  let fecha =
+    fechaObject.getFullYear() + (fechaObject.getMonth + 1) + fechaObject.getDay;
+  //let fechaInsert = moment(fecha, "dd/mm/yyyy");
   Solicitud.create({
-    fecha_Sol: new Date(),
-    fecha_Act: new Date(),
+    fecha_Sol: moment(),
+    fecha_Act: moment(),
     estatus: 1,
-    retroalimentacion: req.body.retroalim,
+    retroalimentacion: "Solicitud creada exitosamente",
     estudiante: req.body.estudiante,
-    tramite: req.body.tramite,
+    tramite: "001",
   })
     .then(() => res.send({ Code: 1 }))
     .catch(() => res.send({ Code: -1 }));
