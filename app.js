@@ -42,6 +42,7 @@ app.get("/", function (req, res) {
 //Login
 app.post("/Login", function (req, res) {
   //Buscar si existe el registro de usuario
+
   Usuario.findByPk(req.body.id_number).then((result) => {
     //Si si existe, checar si coincide usuario y contraseña
     if (result != null) {
@@ -143,8 +144,10 @@ app.post("/SendEmail", function (req, res) {
   transporter.sendMail(mailOptions, function (error, info) {
     if (error) {
       console.log(error);
+      res.send({ Code: -1 });
     } else {
       console.log("Correo enviado: " + info.response);
+      res.send({ Code: 1 });
     }
   });
 });
@@ -169,13 +172,52 @@ app.post("/RequestUserApplication", function (req, res) {
 //Registrar una nueva solicitud
 app.post("/NewUserApplication", function (req, res) {
   Solicitud.create({
-    fecha_Sol: req.body.fecha_inicio,
-    fecha_Act: req.body.fecha_act,
+    fecha_Sol: new Date(),
+    fecha_Act: new Date(),
     estatus: 1,
     retroalimentacion: req.body.retroalim,
     estudiante: req.body.estudiante,
     tramite: req.body.tramite,
-  });
+  })
+    .then(() => res.send({ Code: 1 }))
+    .catch(() => res.send({ Code: -1 }));
+});
+
+//Cambiar contraseña y/o correo electronico
+app.post("/UpdateUserInfo", function (req, res) {
+  console.log(req.body);
+  Usuario.count({
+    where: {
+      matricula: req.body.matriculaUsuario,
+      contraseña: req.body.contraseñaUsuario,
+    },
+  })
+    .then((result) => {
+      if (result > 0) {
+        if (req.body.contraseñaUsuario !== req.body.nuevaContraseña) {
+          Usuario.update(
+            {
+              contraseña: req.body.nuevaContraseña,
+            },
+            {
+              where: {
+                matricula: req.body.matriculaUsuario,
+              },
+            }
+          );
+        }
+        if (req.body.correoUsuario !== req.body.nuevoCorreo) {
+          Usuario.update(
+            { correo_e: req.body.nuevoCorreo },
+            { where: { matricula: req.body.matriculaUsuario } }
+          );
+        }
+        res.send({ Code: 1 });
+      } else {
+        res.send({ Code: -1 });
+      }
+    })
+    .catch(() => res.send({ Code: 0 }));
 });
 
 //Inicializar el servidor
