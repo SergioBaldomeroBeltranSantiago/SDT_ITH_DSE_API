@@ -174,20 +174,19 @@ app.post("/RequestUserApplication", function (req, res) {
 
 //Registrar una nueva solicitud
 app.post("/NewUserApplication", function (req, res) {
-  let fechaObject = new Date();
-  let fecha =
-    fechaObject.getFullYear() + (fechaObject.getMonth + 1) + fechaObject.getDay;
-  //let fechaInsert = moment(fecha, "dd/mm/yyyy");
   Solicitud.create({
-    fecha_Sol: moment(),
-    fecha_Act: moment(),
+    fecha_Sol: moment(new Date(), "YYYY-MM-DD"),
+    fecha_Act: moment(new Date(), "YYYY-MM-DD"),
     estatus: 1,
     retroalimentacion: "Solicitud creada exitosamente",
     estudiante: req.body.estudiante,
-    tramite: "001",
+    tramite: "0001",
   })
     .then(() => res.send({ Code: 1 }))
-    .catch(() => res.send({ Code: -1 }));
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
 });
 
 //Cambiar contraseña y/o correo electronico
