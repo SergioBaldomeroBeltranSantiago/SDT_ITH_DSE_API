@@ -79,31 +79,31 @@ app.post("/Login", function (req, res) {
 
 //Conseguir datos del usuario activo en sesión, si es admin
 app.post("/AdminInfo", function (req, res) {
-  console.log(req.body.loginID);
-  Usuario.findAll({
-    attributes: ["matricula", "nombre_C", "correo_e"],
-    where: { matricula: req.body.loginID },
-  })
-    .then((consult) => {
-      res.send(consult);
+  Usuario.findByPk(req.body.loginID)
+    .then((result) => {
+      res.send(result);
     })
     .catch((error) => {
       console.log(error);
+      res.send({ Code: -1 });
     });
 });
 
 //Conseguir datos del usuario activo en sesión, si es estudiante
 app.post("/StudentInfo", function (req, res) {
-  Usuario.findAll({
-    attributes: ["matricula", "nombre_C", "correo_e"],
-    where: { matricula: req.body.loginID },
-    include: [{ model: Estudiante, attributes: ["carrera", "semestre"] }],
+  Usuario.findByPk(req.body.loginID, {
+    include: [
+      {
+        model: Estudiante,
+      },
+    ],
   })
-    .then((consult) => {
-      res.send(consult);
+    .then((result) => {
+      res.send(result);
     })
     .catch((error) => {
       console.log(error);
+      res.send({ Code: -1 });
     });
 });
 
@@ -229,7 +229,7 @@ app.post("/NewUserApplication", function (req, res) {
     fecha_Sol: moment(new Date(), "YYYY-MM-DD"),
     fecha_Act: moment(new Date(), "YYYY-MM-DD"),
     estatus: 1,
-    retroalimentacion: "Solicitud creada exitosamente",
+    retroalimentacion: "Solicitud creada exitosamente, esperando documentos",
     estudiante: req.body.estudiante,
     tramite: "0001",
   })
@@ -242,7 +242,6 @@ app.post("/NewUserApplication", function (req, res) {
 
 //Cambiar contraseña y/o correo electronico
 app.post("/UpdateUserInfo", function (req, res) {
-  console.log(req.body);
   Usuario.count({
     where: {
       matricula: req.body.matriculaUsuario,
@@ -251,10 +250,10 @@ app.post("/UpdateUserInfo", function (req, res) {
   })
     .then((result) => {
       if (result > 0) {
-        if (req.body.contraseñaUsuario !== req.body.nuevaContraseña) {
+        if (req.body.contraseñaUsuario !== req.body.newPassword) {
           Usuario.update(
             {
-              contraseña: req.body.nuevaContraseña,
+              contraseña: req.body.newPassword,
             },
             {
               where: {
@@ -263,9 +262,9 @@ app.post("/UpdateUserInfo", function (req, res) {
             }
           );
         }
-        if (req.body.correoUsuario !== req.body.nuevoCorreo) {
+        if (req.body.correoUsuario !== req.body.newEmail) {
           Usuario.update(
-            { correo_e: req.body.nuevoCorreo },
+            { correo_e: req.body.newEmail },
             { where: { matricula: req.body.matriculaUsuario } }
           );
         }
