@@ -3,8 +3,9 @@ const express = require("express");
 const app = express();
 const sequelize = require("./Database/db");
 const cors = require("cors");
-var nodemailer = require("nodemailer");
+const nodemailer = require("nodemailer");
 const moment = require("moment");
+const multer = require("multer");
 
 //Patron GOF - Singleton
 const Usuario = require("./Database/Models/Usuario");
@@ -277,6 +278,11 @@ app.post("/UpdateUserInfo", function (req, res) {
       console.log(error);
       res.send({ Code: 0 });
     });
+});
+
+app.post("/UploadDocuments", function (req, res) {
+  console.log(req.body);
+  res.send({ Code: 0 });
 });
 
 //Inicializar el servidor
