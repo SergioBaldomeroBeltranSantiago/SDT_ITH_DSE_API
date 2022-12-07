@@ -6,7 +6,7 @@ class Documento extends Model {}
 Documento.init(
   {
     nombre_D: {
-      type: DataTypes.STRING(40),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     documento_Data: {

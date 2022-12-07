@@ -6,7 +6,7 @@ class Imagen extends Model {}
 Imagen.init(
   {
     nombre_I: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     Imagen_Data: {

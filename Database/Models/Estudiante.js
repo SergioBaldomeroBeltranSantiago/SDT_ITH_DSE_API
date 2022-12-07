@@ -6,7 +6,7 @@ class Estudiante extends Model {}
 Estudiante.init(
   {
     carrera: {
-      type: DataTypes.STRING(16),
+      type: DataTypes.STRING(40),
       allowNull: false,
     },
     semestre: {

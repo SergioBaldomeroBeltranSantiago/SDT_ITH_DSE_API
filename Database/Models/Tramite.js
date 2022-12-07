@@ -10,7 +10,7 @@ Tramite.init(
         primaryKey: true,
     },
     nombre_T: {
-        type: DataTypes.STRING(20),
+        type: DataTypes.STRING,
         allowNull: false
     }
     },
