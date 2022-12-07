@@ -15,6 +15,7 @@ const Tramite_M = require("./Database/Models/Tramite_M");
 const Solicitud = require("./Database/Models/Solicitud");
 const Documento = require("./Database/Models/Documento");
 const Solicitud_Bitacora = require("./Database/Models/Solicitud_Bitacora");
+const Operador = require("sequelize");
 
 //Definimos el puerto a utilizar
 const PORT = process.env.PORT || 3001;
@@ -44,28 +45,36 @@ app.get("/", function (req, res) {
 app.post("/Login", function (req, res) {
   //Buscar si existe el registro de usuario
 
-  Usuario.findByPk(req.body.id_number).then((result) => {
-    //Si si existe, checar si coincide usuario y contraseña
-    if (result != null) {
-      Usuario.count({
-        where: {
-          matricula: req.body.id_number,
-          contraseña: req.body.password,
-        },
-      }).then((consult) => {
-        if (consult > 0) {
-          //Si si coinciden, se envia codigo de confirmación
-          res.send({ Code: 1 });
-        } else {
-          //Si no coinciden, se envia codigo de contraseña incorrecta
-          res.send({ Code: -1 });
-        }
-      });
-    } else {
-      //Si no existe, se envia codigo de usuario no existente
-      res.send({ Code: 0 });
-    }
-  });
+  Usuario.findByPk(req.body.id_number)
+    .then((result) => {
+      //Si si existe, checar si coincide usuario y contraseña
+      if (result != null) {
+        Usuario.count({
+          where: {
+            matricula: req.body.id_number,
+            contraseña: req.body.password,
+          },
+        })
+          .then((consult) => {
+            if (consult > 0) {
+              //Si si coinciden, se envia codigo de confirmación
+              res.send({ Code: 1 });
+            } else {
+              //Si no coinciden, se envia codigo de contraseña incorrecta
+              res.send({ Code: -1 });
+            }
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      } else {
+        //Si no existe, se envia codigo de usuario no existente
+        res.send({ Code: 0 });
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+    });
 });
 
 //Conseguir datos del usuario activo en sesión, si es admin
@@ -74,9 +83,13 @@ app.post("/AdminInfo", function (req, res) {
   Usuario.findAll({
     attributes: ["matricula", "nombre_C", "correo_e"],
     where: { matricula: req.body.loginID },
-  }).then((consult) => {
-    res.send(consult);
-  });
+  })
+    .then((consult) => {
+      res.send(consult);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
 });
 
 //Conseguir datos del usuario activo en sesión, si es estudiante
@@ -85,9 +98,13 @@ app.post("/StudentInfo", function (req, res) {
     attributes: ["matricula", "nombre_C", "correo_e"],
     where: { matricula: req.body.loginID },
     include: [{ model: Estudiante, attributes: ["carrera", "semestre"] }],
-  }).then((consult) => {
-    res.send(consult);
-  });
+  })
+    .then((consult) => {
+      res.send(consult);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
 });
 
 //Conseguir la lista de Solicitudes en el sistema, filtrada según el estatus
@@ -109,9 +126,13 @@ app.post("/RequestApplicationList", function (req, res) {
       ["fecha_Act", "ASC"],
       ["fecha_Sol", "ASC"],
     ],
-  }).then((consult) => {
-    res.send(consult);
-  });
+  })
+    .then((consult) => {
+      res.send(consult);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
 });
 
 //Conseguir la lista de Tramites cargados en el sistema
@@ -128,9 +149,13 @@ app.post("/RequestTransactionList", function (req, res) {
         ],
       },
     ],
-  }).then((consult) => {
-    res.send(consult);
-  });
+  })
+    .then((consult) => {
+      res.send(consult);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
 });
 
 //Enviar un correo a un destinatario
@@ -153,7 +178,7 @@ app.post("/SendEmail", function (req, res) {
   });
 });
 
-//Conseguir la solicitud del estudiante, o avisar si no hay una existente
+//Conseguir la solicitud del estudiante
 app.post("/RequestUserApplication", function (req, res) {
   Solicitud.findOne({
     attributes: ["fecha_Sol", "fecha_Act", "estatus", "retroalimentacion"],
@@ -169,7 +194,33 @@ app.post("/RequestUserApplication", function (req, res) {
     .then((consult) => {
       res.send(consult);
     })
-    .catch(() => res.send({ Code: -1 }));
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
+//Saber si el estudiante tiene una solicitud activa o no
+app.post("/UserHasApplication", function (req, res) {
+  Solicitud.count({
+    where: {
+      estudiante: req.body.matriculaUsuario,
+    },
+    estatus: {
+      [Operador.and]: {
+        [Operador.lt]: 9,
+        [Operador.gt]: 0,
+      },
+    },
+  })
+    .then((consult) => {
+      let hassApplication = consult > 0;
+      res.send({ hassApplication });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
 });
 
 //Registrar una nueva solicitud
@@ -223,7 +274,10 @@ app.post("/UpdateUserInfo", function (req, res) {
         res.send({ Code: -1 });
       }
     })
-    .catch(() => res.send({ Code: 0 }));
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: 0 });
+    });
 });
 
 //Inicializar el servidor
