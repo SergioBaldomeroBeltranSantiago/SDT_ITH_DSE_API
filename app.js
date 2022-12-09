@@ -210,13 +210,10 @@ app.post("/RequestUserApplication", function (req, res) {
       },
       { model: Tramite, attributes: ["nombre_T"] },
       { model: Documento, attributes: ["nombre_D", "documento_Data"] },
-      {
-        model: Solicitud_Bitacora,
-        attributes: ["fecha_C", "estatus_Anterior", "retroalimentacion"],
-      },
     ],
   })
     .then((consult) => {
+      console.log(consult);
       res.send(consult);
     })
     .catch((error) => {
@@ -306,18 +303,39 @@ app.post("/UpdateUserInfo", function (req, res) {
 
 //Actualizar la solicitud
 app.post("/updateApplication", function (req, res) {
-  Solicitud.update(
-    {
-      estatus: req.body.nuevoEstatus,
-      fecha_Act: moment(new Date(), "YYYY-MM-DD"),
-      retroalimentacion: estatusLexico[req.body.nuevoEstatus],
-    },
-    {
-      where: {
-        id: req.body.id,
-      },
-    }
-  );
+  Solicitud_Bitacora.create({
+    fecha_C: moment(new Date(), "YYYY-MM-DD"),
+    estatus_Anterior: req.body.estatusAnterior,
+    retroalimentacion: req.body.retroAnterior,
+    Solicitud_referente: req.body.id,
+  })
+    .then((result) => {
+      console.log(result);
+      Solicitud.update(
+        {
+          estatus: req.body.nuevoEstatus,
+          fecha_Act: moment(new Date(), "YYYY-MM-DD"),
+          retroalimentacion: estatusLexico[req.body.nuevoEstatus],
+        },
+        {
+          where: {
+            id: req.body.id,
+          },
+        }
+      )
+        .then((result) => {
+          console.log(result);
+          res.send({ Code: 1 });
+        })
+        .catch((error) => {
+          console.log(error);
+          res.send({ Code: 0 });
+        });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
 });
 
 //Subir documentos al sistema
