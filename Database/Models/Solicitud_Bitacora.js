@@ -28,7 +28,7 @@ Solicitud_Bitacora.init(
 
 Solicitud.hasMany(Solicitud_Bitacora, {
   foreignKey: {
-    name: "Solicitud referente",
+    name: "Solicitud_referente",
     allowNull: false,
   },
 });
