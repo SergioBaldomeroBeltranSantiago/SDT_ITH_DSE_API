@@ -306,11 +306,18 @@ app.post("/UpdateUserInfo", function (req, res) {
 
 //Actualizar la solicitud
 app.post("/updateApplication", function (req, res) {
-  Solicitud.update({
-    estatus: req.body.nuevoEstatus,
-    fecha_Act: moment(new Date(), "YYYY-MM-DD"),
-    retroalimentacion: estatusLexico[req.body.nuevoEstatus],
-  });
+  Solicitud.update(
+    {
+      estatus: req.body.nuevoEstatus,
+      fecha_Act: moment(new Date(), "YYYY-MM-DD"),
+      retroalimentacion: estatusLexico[req.body.nuevoEstatus],
+    },
+    {
+      where: {
+        id: req.body.id,
+      },
+    }
+  );
 });
 
 //Subir documentos al sistema
