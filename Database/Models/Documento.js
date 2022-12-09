@@ -24,7 +24,7 @@ Documento.init(
 
 Solicitud.hasMany(Documento, {
   foreignKey: {
-    name: "solicitud asociada",
+    name: "solicitud_asociada",
     allowNull: false,
   },
 });
