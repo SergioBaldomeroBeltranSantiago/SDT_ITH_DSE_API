@@ -5,7 +5,6 @@ const sequelize = require("./Database/db");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
 const moment = require("moment");
-const multer = require("multer");
 
 //Patron GOF - Singleton
 const Usuario = require("./Database/Models/Usuario");
@@ -18,6 +17,20 @@ const Documento = require("./Database/Models/Documento");
 const Solicitud_Bitacora = require("./Database/Models/Solicitud_Bitacora");
 const Operador = require("sequelize");
 
+//Utilidades
+const estatusLexico = {
+  1: "Solicitud creada exitosamente, esperando documentos",
+  2: "Haz subido tus documentos con exito, espera a que la encargada los revise",
+  3: "Ha habido uno o varios errores en tus documentos, por favor revisalos y vuelve a subirlos",
+  4: "Los documentos han sido aceptados, favor de venir de manera presencial al departamento de servicios escolares para entregarlos en físico",
+  5: "Documentos recibidos en persona",
+  6: "Solicitud enviada a la aseguradora",
+  7: "Solicitud rechazada por la aseguradora",
+  8: "Solicitud reenviada a la aseguradora",
+  9: "Finiquito en espera de firma en persona",
+  10: "Solicitud terminada",
+};
+
 //Definimos el puerto a utilizar
 const PORT = process.env.PORT || 3001;
 
@@ -25,8 +38,8 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 
 //Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "3mb" }));
+app.use(express.urlencoded({ extended: true, limit: "3mb" }));
 
 //Transportador de correo
 var transporter = nodemailer.createTransport({
@@ -182,7 +195,13 @@ app.post("/SendEmail", function (req, res) {
 //Conseguir la solicitud del estudiante
 app.post("/RequestUserApplication", function (req, res) {
   Solicitud.findOne({
-    attributes: ["fecha_Sol", "fecha_Act", "estatus", "retroalimentacion"],
+    attributes: [
+      "id",
+      "fecha_Sol",
+      "fecha_Act",
+      "estatus",
+      "retroalimentacion",
+    ],
     include: [
       {
         model: Usuario,
@@ -190,6 +209,11 @@ app.post("/RequestUserApplication", function (req, res) {
         where: { matricula: req.body.matriculaUsuario },
       },
       { model: Tramite, attributes: ["nombre_T"] },
+      { model: Documento, attributes: ["nombre_D", "documento_Data"] },
+      {
+        model: Solicitud_Bitacora,
+        attributes: ["fecha_C", "estatus_Anterior", "retroalimentacion"],
+      },
     ],
   })
     .then((consult) => {
@@ -209,7 +233,7 @@ app.post("/UserHasApplication", function (req, res) {
     },
     estatus: {
       [Operador.and]: {
-        [Operador.lt]: 9,
+        [Operador.lt]: 12,
         [Operador.gt]: 0,
       },
     },
@@ -230,7 +254,7 @@ app.post("/NewUserApplication", function (req, res) {
     fecha_Sol: moment(new Date(), "YYYY-MM-DD"),
     fecha_Act: moment(new Date(), "YYYY-MM-DD"),
     estatus: 1,
-    retroalimentacion: "Solicitud creada exitosamente, esperando documentos",
+    retroalimentacion: estatusLexico[1],
     estudiante: req.body.estudiante,
     tramite: "0001",
   })
@@ -280,9 +304,29 @@ app.post("/UpdateUserInfo", function (req, res) {
     });
 });
 
+//Actualizar la solicitud
+app.post("/updateApplication", function (req, res) {
+  Solicitud.update({
+    estatus: req.body.nuevoEstatus,
+    fecha_Act: moment(new Date(), "YYYY-MM-DD"),
+    retroalimentacion: estatusLexico[req.body.nuevoEstatus],
+  });
+});
+
+//Subir documentos al sistema
 app.post("/UploadDocuments", function (req, res) {
-  console.log(req.body);
-  res.send({ Code: 0 });
+  Documento.create({
+    nombre_D: req.body.documentoName,
+    documento_Data: req.body.bytes,
+    solicitud_asociada: req.body.idSolicitud,
+  })
+    .then((result) => {
+      res.send({ Code: 1 });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
 });
 
 //Inicializar el servidor
