@@ -194,7 +194,7 @@ app.post("/SendEmail", function (req, res) {
 
 //Conseguir la solicitud del estudiante
 app.post("/RequestUserApplication", function (req, res) {
-  Solicitud.findOne({
+  Solicitud.findAll({
     attributes: [
       "id",
       "fecha_Sol",
@@ -303,6 +303,7 @@ app.post("/UpdateUserInfo", function (req, res) {
 
 //Actualizar la solicitud
 app.post("/updateApplication", function (req, res) {
+  console.log(req.body);
   Solicitud_Bitacora.create({
     fecha_C: moment(new Date(), "YYYY-MM-DD"),
     estatus_Anterior: req.body.estatusAnterior,
