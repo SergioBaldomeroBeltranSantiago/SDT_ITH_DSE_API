@@ -354,6 +354,22 @@ app.post("/UploadDocuments", function (req, res) {
     });
 });
 
+//Obtener documentos de la solicitud
+app.post("/RetrieveDocuments", function (req, res) {
+  Documento.findAll({
+    where: {
+      solicitud_asociada: req.body.solicitudID,
+    },
+  })
+    .then((result) => {
+      res.send(result);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
 //Inicializar el servidor
 app.listen(PORT, function () {
   //Conectarse a la base de datos al iniciar el servidor
