@@ -16,6 +16,7 @@ const Solicitud = require("./Database/Models/Solicitud");
 const Documento = require("./Database/Models/Documento");
 const Solicitud_Bitacora = require("./Database/Models/Solicitud_Bitacora");
 const Operador = require("sequelize");
+const { where } = require("sequelize");
 
 //Utilidades
 const estatusLexico = {
@@ -23,12 +24,14 @@ const estatusLexico = {
   2: "Haz subido tus documentos con exito, espera a que la encargada los revise",
   3: "Ha habido uno o varios errores en tus documentos, por favor revisalos y vuelve a subirlos",
   4: "Los documentos han sido aceptados, favor de venir de manera presencial al departamento de servicios escolares para entregarlos en físico",
-  5: "Documentos recibidos en persona",
-  6: "Solicitud enviada a la aseguradora",
-  7: "Solicitud rechazada por la aseguradora",
-  8: "Solicitud reenviada a la aseguradora",
-  9: "Finiquito en espera de firma en persona",
-  10: "Solicitud terminada",
+  5: "Hemos recibido los documentos en persona, en poco tiempo seran enviados a la aseguradora",
+  6: "Se ha armado tu solicitud formal y ya ha sido enviada a la aseguradora",
+  7: "La solicitud ha sido rechazada por la aseguradora, revisa los documentos",
+  8: "Se han recibido nuevos documentos en formato digital, espera a que se revisen",
+  9: "Los nuevos documentos han sido rechazados, por favor sube nuevos documentos",
+  10: "La solicitud ha sido reenviada a la aseguradora",
+  11: "EL finiquito ha sido enviado, necesitas venir en persona a firmarlo",
+  12: "Solicitud terminada",
 };
 
 //Definimos el puerto a utilizar
@@ -125,7 +128,7 @@ app.post("/StudentInfo", function (req, res) {
 app.post("/RequestApplicationList", function (req, res) {
   Solicitud.findAll({
     attributes: [
-      "id_S",
+      "id",
       "fecha_Sol",
       "fecha_Act",
       "estatus",
@@ -213,7 +216,6 @@ app.post("/RequestUserApplication", function (req, res) {
     ],
   })
     .then((consult) => {
-      console.log(consult);
       res.send(consult);
     })
     .catch((error) => {
@@ -303,15 +305,13 @@ app.post("/UpdateUserInfo", function (req, res) {
 
 //Actualizar la solicitud
 app.post("/updateApplication", function (req, res) {
-  console.log(req.body);
   Solicitud_Bitacora.create({
     fecha_C: moment(new Date(), "YYYY-MM-DD"),
     estatus_Anterior: req.body.estatusAnterior,
     retroalimentacion: req.body.retroAnterior,
     Solicitud_referente: req.body.id,
   })
-    .then((result) => {
-      console.log(result);
+    .then(() => {
       Solicitud.update(
         {
           estatus: req.body.nuevoEstatus,
@@ -324,13 +324,12 @@ app.post("/updateApplication", function (req, res) {
           },
         }
       )
-        .then((result) => {
-          console.log(result);
+        .then(() => {
           res.send({ Code: 1 });
         })
         .catch((error) => {
           console.log(error);
-          res.send({ Code: 0 });
+          res.send({ Code: -1 });
         });
     })
     .catch((error) => {
@@ -346,7 +345,7 @@ app.post("/UploadDocuments", function (req, res) {
     documento_Data: req.body.bytes,
     solicitud_asociada: req.body.idSolicitud,
   })
-    .then((result) => {
+    .then(() => {
       res.send({ Code: 1 });
     })
     .catch((error) => {

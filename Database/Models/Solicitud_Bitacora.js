@@ -6,7 +6,7 @@ class Solicitud_Bitacora extends Model {}
 Solicitud_Bitacora.init(
   {
     fecha_C: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     estatus_Anterior: {
