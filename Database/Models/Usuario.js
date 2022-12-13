@@ -17,7 +17,7 @@ Usuario.init(
       type: DataTypes.STRING(8),
       allowNull: false,
     },
-    correo_e: DataTypes.STRING,
+    correo_e: { type: DataTypes.STRING },
   },
   { sequelize, modelName: "Usuario", tableName: "Usuarios", timestamps: false }
 );
