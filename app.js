@@ -15,8 +15,7 @@ const Tramite_M = require("./Database/Models/Tramite_M");
 const Solicitud = require("./Database/Models/Solicitud");
 const Documento = require("./Database/Models/Documento");
 const Solicitud_Bitacora = require("./Database/Models/Solicitud_Bitacora");
-const Operador = require("sequelize");
-const { where } = require("sequelize");
+const { Op } = require("sequelize");
 
 //Utilidades
 const estatusLexico = {
@@ -155,7 +154,7 @@ app.post("/RequestApplicationList", function (req, res) {
 //Conseguir la lista de Tramites cargados en el sistema
 app.post("/RequestTransactionList", function (req, res) {
   Tramite.findAll({
-    attributes: ["nombre_Tramite"],
+    attributes: ["id_Tramite", "nombre_Tramite"],
     include: [
       {
         model: Tramite_M,
@@ -217,6 +216,14 @@ app.post("/RequestUserApplication", function (req, res) {
         attributes: ["id_Doc", "nombre_Doc", "archivo_Doc"],
       },
     ],
+    where: {
+      estatus_Actual: {
+        [Op.and]: {
+          [Op.lt]: 12,
+          [Op.gt]: 0,
+        },
+      },
+    },
   })
     .then((consult) => {
       res.send(consult);
@@ -231,18 +238,18 @@ app.post("/RequestUserApplication", function (req, res) {
 app.post("/UserHasApplication", function (req, res) {
   Solicitud.count({
     where: {
-      estudiante: req.body.matriculaUsuario,
+      estudiante_Solicitante: req.body.matriculaUsuario,
     },
     estatus_Actual: {
-      [Operador.and]: {
-        [Operador.lt]: 12,
-        [Operador.gt]: 0,
+      [Op.and]: {
+        [Op.lt]: 12,
+        [Op.gt]: 0,
       },
     },
   })
     .then((consult) => {
-      let hassApplication = consult > 0;
-      res.send({ hassApplication });
+      let hasApplication = consult > 0;
+      res.send({ hasApplication });
     })
     .catch((error) => {
       console.log(error);
@@ -257,8 +264,8 @@ app.post("/NewUserApplication", function (req, res) {
     fecha_Actualizacion: moment(new Date(), "YYYY-MM-DD"),
     estatus_Actual: 1,
     retroalimentacion: estatusLexico[1],
-    estudiante_Solicitante: req.body.estudiante,
-    tramite_Solicitado: req.body.tramite,
+    estudiante_Solicitante: req.body.estudiante_S,
+    tramite_Solicitado: req.body.tramite_S,
   })
     .then(() => res.send({ Code: 1 }))
     .catch((error) => {
