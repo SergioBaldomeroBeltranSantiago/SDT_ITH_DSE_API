@@ -128,20 +128,20 @@ app.post("/StudentInfo", function (req, res) {
 app.post("/RequestApplicationList", function (req, res) {
   Solicitud.findAll({
     attributes: [
-      "id",
-      "fecha_Sol",
-      "fecha_Act",
-      "estatus",
+      "id_Solicitud",
+      "fecha_Solicitud",
+      "fecha_Actualizacion",
+      "estatus_Actual",
       "retroalimentacion",
     ],
     include: [
-      { model: Usuario, attributes: ["nombre_C"] },
-      { model: Tramite, attributes: ["nombre_T"] },
+      { model: Usuario, attributes: ["matricula", "nombre_Completo"] },
+      { model: Tramite, attributes: ["id_Tramite", "nombre_Tramite"] },
     ],
     where: { estatus: req.body.estatus },
     order: [
-      ["fecha_Act", "ASC"],
-      ["fecha_Sol", "ASC"],
+      ["fecha_Actualizacion", "ASC"],
+      ["fecha_Solicitud", "ASC"],
     ],
   })
     .then((consult) => {
@@ -155,11 +155,11 @@ app.post("/RequestApplicationList", function (req, res) {
 //Conseguir la lista de Tramites cargados en el sistema
 app.post("/RequestTransactionList", function (req, res) {
   Tramite.findAll({
-    attributes: ["nombre_T"],
+    attributes: ["nombre_Tramite"],
     include: [
       {
         model: Tramite_M,
-        attributes: ["texto", "tipo", "orden"],
+        attributes: ["id_Tramite_M", "texto", "tipo", "orden"],
         order: [
           ["tipo", "ASC"],
           ["orden", "ASC"],
@@ -199,20 +199,23 @@ app.post("/SendEmail", function (req, res) {
 app.post("/RequestUserApplication", function (req, res) {
   Solicitud.findAll({
     attributes: [
-      "id",
-      "fecha_Sol",
-      "fecha_Act",
-      "estatus",
+      "id_Solicitud",
+      "fecha_Solicitud",
+      "fecha_Actualizacion",
+      "estatus_Actual",
       "retroalimentacion",
     ],
     include: [
       {
         model: Usuario,
-        attributes: ["nombre_C"],
+        attributes: ["matricula", "nombre_Completo"],
         where: { matricula: req.body.matriculaUsuario },
       },
-      { model: Tramite, attributes: ["nombre_T"] },
-      { model: Documento, attributes: ["nombre_D", "documento_Data"] },
+      { model: Tramite, attributes: ["id_Tramite", "nombre_Tramite"] },
+      {
+        model: Documento,
+        attributes: ["id_Doc", "nombre_Doc", "archivo_Doc"],
+      },
     ],
   })
     .then((consult) => {
@@ -230,7 +233,7 @@ app.post("/UserHasApplication", function (req, res) {
     where: {
       estudiante: req.body.matriculaUsuario,
     },
-    estatus: {
+    estatus_Actual: {
       [Operador.and]: {
         [Operador.lt]: 12,
         [Operador.gt]: 0,
@@ -250,12 +253,12 @@ app.post("/UserHasApplication", function (req, res) {
 //Registrar una nueva solicitud
 app.post("/NewUserApplication", function (req, res) {
   Solicitud.create({
-    fecha_Sol: moment(new Date(), "YYYY-MM-DD"),
-    fecha_Act: moment(new Date(), "YYYY-MM-DD"),
-    estatus: 1,
+    fecha_Solicitud: moment(new Date(), "YYYY-MM-DD"),
+    fecha_Actualizacion: moment(new Date(), "YYYY-MM-DD"),
+    estatus_Actual: 1,
     retroalimentacion: estatusLexico[1],
-    estudiante: req.body.estudiante,
-    tramite: "0001",
+    estudiante_Solicitante: req.body.estudiante,
+    tramite_Solicitado: req.body.tramite,
   })
     .then(() => res.send({ Code: 1 }))
     .catch((error) => {
@@ -306,21 +309,21 @@ app.post("/UpdateUserInfo", function (req, res) {
 //Actualizar la solicitud
 app.post("/updateApplication", function (req, res) {
   Solicitud_Bitacora.create({
-    fecha_C: moment(new Date(), "YYYY-MM-DD"),
+    fecha_Cambio: moment(new Date(), "YYYY-MM-DD"),
     estatus_Anterior: req.body.estatusAnterior,
-    retroalimentacion: req.body.retroAnterior,
-    Solicitud_referente: req.body.id,
+    retroalimentacion_Anterior: req.body.retroAnterior,
+    solicitud_Asociada: req.body.id,
   })
     .then(() => {
       Solicitud.update(
         {
-          estatus: req.body.nuevoEstatus,
-          fecha_Act: moment(new Date(), "YYYY-MM-DD"),
+          estatus_Actual: req.body.nuevoEstatus,
+          fecha_Actualizacion: moment(new Date(), "YYYY-MM-DD"),
           retroalimentacion: estatusLexico[req.body.nuevoEstatus],
         },
         {
           where: {
-            id: req.body.id,
+            id_Solicitud: req.body.id,
           },
         }
       )
@@ -341,9 +344,9 @@ app.post("/updateApplication", function (req, res) {
 //Subir documentos al sistema
 app.post("/UploadDocuments", function (req, res) {
   Documento.create({
-    nombre_D: req.body.documentoName,
-    documento_Data: req.body.bytes,
-    solicitud_asociada: req.body.idSolicitud,
+    nombre_Doc: req.body.documentoName,
+    archivo_Doc: req.body.bytes,
+    solicitud_Vinculada: req.body.idSolicitud,
   })
     .then(() => {
       res.send({ Code: 1 });
@@ -358,7 +361,7 @@ app.post("/UploadDocuments", function (req, res) {
 app.post("/RetrieveDocuments", function (req, res) {
   Documento.findAll({
     where: {
-      solicitud_asociada: req.body.solicitudID,
+      solicitud_Vinculada: req.body.solicitudID,
     },
   })
     .then((result) => {
