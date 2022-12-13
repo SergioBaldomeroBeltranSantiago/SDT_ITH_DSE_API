@@ -5,7 +5,13 @@ const Solicitud = require("./Solicitud");
 class Solicitud_Bitacora extends Model {}
 Solicitud_Bitacora.init(
   {
-    fecha_C: {
+    id_Solicitud_Bitacora: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      allowNull: false,
+      autoIncrement: true,
+    },
+    fecha_Ccambio: {
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
@@ -13,7 +19,7 @@ Solicitud_Bitacora.init(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    retroalimentacion: {
+    retroalimentacion_Anterior: {
       type: DataTypes.STRING,
       allowNull: false,
     },
@@ -28,7 +34,7 @@ Solicitud_Bitacora.init(
 
 Solicitud.hasMany(Solicitud_Bitacora, {
   foreignKey: {
-    name: "Solicitud_referente",
+    name: "solicitud_Asociada",
     allowNull: false,
   },
 });

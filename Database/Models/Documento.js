@@ -5,11 +5,17 @@ const Solicitud = require("./Solicitud");
 class Documento extends Model {}
 Documento.init(
   {
-    nombre_D: {
+    id_Doc: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    nombre_Doc: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    documento_Data: {
+    archivo_Doc: {
       type: DataTypes.BLOB,
       allowNull: false,
     },
@@ -24,7 +30,7 @@ Documento.init(
 
 Solicitud.hasMany(Documento, {
   foreignKey: {
-    name: "solicitud_asociada",
+    name: "solicitud_Vinculada",
     allowNull: false,
   },
 });

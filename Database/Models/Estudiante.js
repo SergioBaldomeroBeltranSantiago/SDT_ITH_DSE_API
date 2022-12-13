@@ -5,6 +5,12 @@ const Usuario = require("./Usuario");
 class Estudiante extends Model {}
 Estudiante.init(
   {
+    id_Estudiante: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      primaryKey: true,
+      autoIncrement: true,
+    },
     carrera: {
       type: DataTypes.STRING(40),
       allowNull: false,
@@ -24,7 +30,7 @@ Estudiante.init(
 
 Usuario.hasOne(Estudiante, {
   foreignKey: {
-    name: "matricula_E",
+    name: "matricula_Estudiante",
     allowNull: false,
   },
 });

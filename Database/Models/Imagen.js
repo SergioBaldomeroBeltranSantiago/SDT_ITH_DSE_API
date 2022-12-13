@@ -5,11 +5,17 @@ const Tramite_M = require("./Tramite_M");
 class Imagen extends Model {}
 Imagen.init(
   {
-    nombre_I: {
+    id_Imagen: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      allowNull: false,
+      autoIncrement: true,
+    },
+    nombre_Imagen: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    Imagen_Data: {
+    archivo_Imagen: {
       type: DataTypes.BLOB,
       allowNull: false,
     },
@@ -19,7 +25,7 @@ Imagen.init(
 
 Imagen.hasMany(Tramite_M, {
   foreignKey: {
-    name: "imagen",
+    name: "imagen_Asociada",
     allowNull: true,
   },
 });

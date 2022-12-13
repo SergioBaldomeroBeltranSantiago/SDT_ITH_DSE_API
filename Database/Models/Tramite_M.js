@@ -5,6 +5,12 @@ const Tramite = require("./Tramite");
 class Tramite_M extends Model {}
 Tramite_M.init(
   {
+    id_Tramite_M: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      allowNull: false,
+      autoIncrement: true,
+    },
     texto: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -28,7 +34,7 @@ Tramite_M.init(
 
 Tramite.hasMany(Tramite_M, {
   foreignKey: {
-    name: "tramite",
+    name: "tramite_Asociado",
     allowNull: false,
   },
 });

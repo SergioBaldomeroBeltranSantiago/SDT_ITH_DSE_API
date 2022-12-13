@@ -9,7 +9,7 @@ Usuario.init(
       allowNull: false,
       primaryKey: true,
     },
-    nombre_C: {
+    nombre_Completo: {
       type: DataTypes.STRING,
       allowNull: false,
     },
