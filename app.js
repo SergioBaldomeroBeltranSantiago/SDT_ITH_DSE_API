@@ -137,7 +137,7 @@ app.post("/RequestApplicationList", function (req, res) {
       { model: Usuario, attributes: ["matricula", "nombre_Completo"] },
       { model: Tramite, attributes: ["id_Tramite", "nombre_Tramite"] },
     ],
-    where: { estatus: req.body.estatus },
+    where: { estatus_Actual: req.body.estatus },
     order: [
       ["fecha_Actualizacion", "ASC"],
       ["fecha_Solicitud", "ASC"],
