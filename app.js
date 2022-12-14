@@ -194,13 +194,18 @@ app.post("/SendEmail", function (req, res) {
   });
 });
 
-//Correo enviado para 
+//Correo enviado para
 app.post("/SendSeguimientoEmail", function (req, res) {
   var mailOptions = {
     from: process.env.MAIL_USER,
     to: req.body.destinatario,
     subject: "Solicitud de seguimiento del seguro con folio: " + req.body.folio,
-    text: "Buen dia, se le solicita una actualizacion sobre la solicitud con folio \""+ req.body.folio + "\", a nombre de \""+req.body.nombre+"\" relacionado al \"SOLICITUD DE RECLAMACIÓN DE PAGO DE SINIESTRO\" proveniende del Instituto Tecnologico de Hermosillo"
+    text:
+      'Buen dia, se le solicita una actualizacion sobre la solicitud con folio "' +
+      req.body.folio +
+      '", a nombre de "' +
+      req.body.nombre +
+      '" relacionado al "SOLICITUD DE RECLAMACIÓN DE PAGO DE SINIESTRO" proveniende del Instituto Tecnologico de Hermosillo',
   };
 
   transporter.sendMail(mailOptions, function (error, info) {
