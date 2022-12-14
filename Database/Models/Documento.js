@@ -5,17 +5,17 @@ const Solicitud = require("./Solicitud");
 class Documento extends Model {}
 Documento.init(
   {
-    id_Doc: {
+    id_Documento: {
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true,
       autoIncrement: true,
     },
-    nombre_Doc: {
-      type: DataTypes.STRING,
+    nombre_Documento: {
+      type: DataTypes.TEXT,
       allowNull: false,
     },
-    archivo_Doc: {
+    archivo_Documento: {
       type: DataTypes.BLOB,
       allowNull: false,
     },

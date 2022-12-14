@@ -25,8 +25,8 @@ Solicitud.init(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    retroalimentacion: {
-      type: DataTypes.STRING,
+    retroalimentacion_Actual: {
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

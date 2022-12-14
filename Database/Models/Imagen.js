@@ -12,7 +12,7 @@ Imagen.init(
       autoIncrement: true,
     },
     nombre_Imagen: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     archivo_Imagen: {

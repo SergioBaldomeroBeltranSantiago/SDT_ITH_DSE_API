@@ -12,7 +12,7 @@ Tramite_M.init(
       autoIncrement: true,
     },
     texto: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     tipo: {

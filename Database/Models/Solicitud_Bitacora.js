@@ -20,7 +20,7 @@ Solicitud_Bitacora.init(
       allowNull: false,
     },
     retroalimentacion_Anterior: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

@@ -5,12 +5,13 @@ class Tramite extends Model {}
 Tramite.init(
   {
     id_Tramite: {
-      type: DataTypes.STRING(10),
+      type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true,
+      autoIncrement: true,
     },
     nombre_Tramite: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },
