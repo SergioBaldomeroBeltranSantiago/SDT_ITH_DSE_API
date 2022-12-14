@@ -40,8 +40,8 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 
 //Middleware
-app.use(express.json({ limit: "3mb" }));
-app.use(express.urlencoded({ extended: true, limit: "3mb" }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 //Transportador de correo
 var transporter = nodemailer.createTransport({
@@ -131,7 +131,7 @@ app.post("/RequestApplicationList", function (req, res) {
       "fecha_Solicitud",
       "fecha_Actualizacion",
       "estatus_Actual",
-      "retroalimentacion",
+      "retroalimentacion_Actual",
     ],
     include: [
       { model: Usuario, attributes: ["matricula", "nombre_Completo"] },
@@ -227,7 +227,7 @@ app.post("/RequestUserApplication", function (req, res) {
       "fecha_Solicitud",
       "fecha_Actualizacion",
       "estatus_Actual",
-      "retroalimentacion",
+      "retroalimentacion_Actual",
     ],
     include: [
       {
@@ -238,7 +238,7 @@ app.post("/RequestUserApplication", function (req, res) {
       { model: Tramite, attributes: ["id_Tramite", "nombre_Tramite"] },
       {
         model: Documento,
-        attributes: ["id_Doc", "nombre_Doc", "archivo_Doc"],
+        attributes: ["id_Documento", "nombre_Documento", "archivo_Documento"],
       },
     ],
     where: {
@@ -288,7 +288,7 @@ app.post("/NewUserApplication", function (req, res) {
     fecha_Solicitud: moment(new Date(), "YYYY-MM-DD"),
     fecha_Actualizacion: moment(new Date(), "YYYY-MM-DD"),
     estatus_Actual: 1,
-    retroalimentacion: estatusLexico[1],
+    retroalimentacion_Actual: estatusLexico[1],
     estudiante_Solicitante: req.body.estudiante_S,
     tramite_Solicitado: req.body.tramite_S,
   })
@@ -351,7 +351,7 @@ app.post("/updateApplication", function (req, res) {
         {
           estatus_Actual: req.body.nuevoEstatus,
           fecha_Actualizacion: moment(new Date(), "YYYY-MM-DD"),
-          retroalimentacion: estatusLexico[req.body.nuevoEstatus],
+          retroalimentacion_Actual: estatusLexico[req.body.nuevoEstatus],
         },
         {
           where: {
@@ -376,8 +376,8 @@ app.post("/updateApplication", function (req, res) {
 //Subir documentos al sistema
 app.post("/UploadDocuments", function (req, res) {
   Documento.create({
-    nombre_Doc: req.body.documentoName,
-    archivo_Doc: req.body.bytes,
+    nombre_Documento: req.body.documentoName,
+    archivo_Documento: req.body.bytes,
     solicitud_Vinculada: req.body.idSolicitud,
   })
     .then(() => {
@@ -396,6 +396,18 @@ app.post("/RetrieveDocuments", function (req, res) {
       solicitud_Vinculada: req.body.solicitudID,
     },
   })
+    .then((result) => {
+      res.send(result);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
+//Obtener un solo documento para su descarga
+app.post("/ObtainDocument", function (req, res) {
+  Documento.findByPk(req.body.documentoID)
     .then((result) => {
       res.send(result);
     })
