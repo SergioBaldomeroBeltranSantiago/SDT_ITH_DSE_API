@@ -180,7 +180,27 @@ app.post("/SendEmail", function (req, res) {
     from: process.env.MAIL_USER,
     to: req.body.destinatario,
     subject: "Haz solicitado con exito el trámite de " + req.body.tramite,
-    text: "Aquí hay información adicional del trámite, la lista de requisitos y los documentos a llenar A COMPUTADORA",
+    text: "Información del trámite para reclamo de pago único por concepto de orfandad. Se incluyen la lista de documentos a subir en plataforma y un documento para llenar A COMPUTADORA",
+  };
+
+  transporter.sendMail(mailOptions, function (error, info) {
+    if (error) {
+      console.log(error);
+      res.send({ Code: -1 });
+    } else {
+      console.log("Correo enviado: " + info.response);
+      res.send({ Code: 1 });
+    }
+  });
+});
+
+//Correo enviado para 
+app.post("/SendSeguimientoEmail", function (req, res) {
+  var mailOptions = {
+    from: process.env.MAIL_USER,
+    to: req.body.destinatario,
+    subject: "Solicitud de seguimiento del seguro con folio: " + req.body.folio,
+    text: "Buen dia, se le solicita una actualizacion sobre la solicitud con folio \""+ req.body.folio + "\", a nombre de \""+req.body.nombre+"\" relacionado al \"SOLICITUD DE RECLAMACIÓN DE PAGO DE SINIESTRO\" proveniende del Instituto Tecnologico de Hermosillo"
   };
 
   transporter.sendMail(mailOptions, function (error, info) {
