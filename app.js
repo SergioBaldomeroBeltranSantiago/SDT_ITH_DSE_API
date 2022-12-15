@@ -180,20 +180,21 @@ app.post("/SendEmail", function (req, res) {
     from: process.env.MAIL_USER,
     to: req.body.destinatario,
     subject: "Haz solicitado con exito el trámite de " + req.body.tramite,
-    text: "Información del trámite para reclamo de pago único por concepto de orfandad. \nLa lista de los siguientes documentos son para subir en plataforma. Se ingluye un documento para llenar A COMPUTADORA"
-      + "\n \n Lista de documentos a subir a la plataforma ##link##: "
-      + "\n    -Carta de reclamacion llenada en maquina."
-      + "\n    -Comprobante de domicilio del alumno. NO DEBE DE SER MAYOR A 3 MESES"
-      + "\n    -Identificacion oficial del Padre/Madre/Tutor."
-      + "\n    -Acta de nacimiento del asegurado o Padre/Madre o Tutor."
-      + "\n    -Acta de defuncion del Padre/Madre o Tutor."
-      + "\n    -Identificacion oficial del alumno. (En caso de ser menor de edad debera de ser la credencial de la institucion)"
-      + "\n    -Acta de nacimiento del alumno."
-      + "\n    -Resolucion de tutela ante un juez de familia. (En caso de aplicar)"
-      + "\n    -Estado de cuenta bancario donde indique CLABE INTERBANCARIA del alumno. (La cuenta debe de ser capaz de recibir una transferencia de gran tamaño)"
-      + "\n    -Constancia de inscripcion del alumno en el ciclo escolar vigente."
-      + "\n \n \nEstaremos al pendiente, al ser aprobados los documentos, porfavor, ¡¡¡seguir las indicaciones de la imagen adjuntada!!!."
-      + "\nEn caso de duda, mandar mensaje a ventanillaith@hermosillo.tecnm.mx o ir a Servicios Escolares."
+    text:
+      "Información del trámite para reclamo de pago único por concepto de orfandad. \nLa lista de los siguientes documentos son para subir en plataforma. Se ingluye un documento para llenar A COMPUTADORA" +
+      "\n \n Lista de documentos a subir a la plataforma ##link##: " +
+      "\n    -Carta de reclamacion llenada en maquina." +
+      "\n    -Comprobante de domicilio del alumno. NO DEBE DE SER MAYOR A 3 MESES" +
+      "\n    -Identificacion oficial del Padre/Madre/Tutor." +
+      "\n    -Acta de nacimiento del asegurado o Padre/Madre o Tutor." +
+      "\n    -Acta de defuncion del Padre/Madre o Tutor." +
+      "\n    -Identificacion oficial del alumno. (En caso de ser menor de edad debera de ser la credencial de la institucion)" +
+      "\n    -Acta de nacimiento del alumno." +
+      "\n    -Resolucion de tutela ante un juez de familia. (En caso de aplicar)" +
+      "\n    -Estado de cuenta bancario donde indique CLABE INTERBANCARIA del alumno. (La cuenta debe de ser capaz de recibir una transferencia de gran tamaño)" +
+      "\n    -Constancia de inscripcion del alumno en el ciclo escolar vigente." +
+      "\n \n \nEstaremos al pendiente, al ser aprobados los documentos, porfavor, ¡¡¡seguir las indicaciones de la imagen adjuntada!!!." +
+      "\nEn caso de duda, mandar mensaje a ventanillaith@hermosillo.tecnm.mx o ir a Servicios Escolares.",
   };
 
   transporter.sendMail(mailOptions, function (error, info) {
@@ -213,8 +214,13 @@ app.post("/SendSeguimientoEmail", function (req, res) {
     from: process.env.MAIL_USER,
     to: req.body.destinatario,
     subject: "Solicitud de seguimiento del seguro con folio: " + req.body.folio,
-    text: "Buen dia, se le solicita una actualizacion sobre la solicitud con folio \"" + req.body.folio + "\", a nombre de \"" + req.body.nombre + "\". \n Esto en relacion a la \"SOLICITUD DE RECLAMACIÓN DE PAGO DE SINIESTRO\" proveniende del Instituto Tecnologico de Hermosillo."
-      + "\n \n Estamos al pendiente de una respuesta, gracias."
+    text:
+      'Buen dia, se le solicita una actualizacion sobre la solicitud con folio "' +
+      req.body.folio +
+      '", a nombre de "' +
+      req.body.nombre +
+      '". \n Esto en relacion a la "SOLICITUD DE RECLAMACIÓN DE PAGO DE SINIESTRO" proveniende del Instituto Tecnologico de Hermosillo.' +
+      "\n \n Estamos al pendiente de una respuesta, gracias.",
   };
 
   transporter.sendMail(mailOptions, function (error, info) {
@@ -353,15 +359,16 @@ app.post("/updateApplication", function (req, res) {
     fecha_Cambio: moment(new Date(), "YYYY-MM-DD"),
     estatus_Anterior: req.body.estatusAnterior,
     retroalimentacion_Anterior: req.body.retroAnterior,
-    solicitud_Asociada: req.body.id
+    solicitud_Asociada: req.body.id,
   })
     .then(() => {
-      console.log(req.body.retroNueva)
+      console.log(req.body.retroNueva);
       Solicitud.update(
         {
           estatus_Actual: req.body.nuevoEstatus,
           fecha_Actualizacion: moment(new Date(), "YYYY-MM-DD"),
-          retroalimentacion_Actual: estatusLexico[req.body.nuevoEstatus] + ". " + req.body.retroNueva,
+          retroalimentacion_Actual:
+            estatusLexico[req.body.nuevoEstatus] + ". " + req.body.retroNueva,
         },
         {
           where: {
@@ -418,8 +425,8 @@ app.post("/RetrieveDocuments", function (req, res) {
 app.post("/GetConteoSolicitudes", function (req, res) {
   Solicitud.findAndCountAll({
     where: {
-      estatus_Actual: req.body.estatus
-    }
+      estatus_Actual: req.body.estatus,
+    },
   })
     .then((result) => {
       res.send(result);
@@ -432,7 +439,9 @@ app.post("/GetConteoSolicitudes", function (req, res) {
 
 //Obtener un solo documento para su descarga
 app.post("/ObtainDocument", function (req, res) {
-  Documento.findByPk(req.body.documentoID)
+  Documento.findByPk(req.body.documentoID, {
+    attributes: ["archivo_Documento"],
+  })
     .then((result) => {
       res.send(result);
     })
