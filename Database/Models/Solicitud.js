@@ -13,6 +13,10 @@ Solicitud.init(
       allowNull: false,
       autoIncrement: true,
     },
+    folio_Solicitud: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     fecha_Solicitud: {
       type: DataTypes.DATEONLY,
       allowNull: false,

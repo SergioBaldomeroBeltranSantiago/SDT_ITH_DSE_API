@@ -15,8 +15,8 @@ Documento.init(
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    archivo_Documento: {
-      type: DataTypes.BLOB,
+    ruta_Documento: {
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },
