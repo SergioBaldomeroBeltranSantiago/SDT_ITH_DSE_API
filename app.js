@@ -5,6 +5,9 @@ const sequelize = require("./Database/db");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
 const moment = require("moment");
+const { Op } = require("sequelize");
+const multer = require("multer");
+const path = require("path");
 
 //Patron GOF - Singleton
 const Usuario = require("./Database/Models/Usuario");
@@ -15,7 +18,6 @@ const Tramite_M = require("./Database/Models/Tramite_M");
 const Solicitud = require("./Database/Models/Solicitud");
 const Documento = require("./Database/Models/Documento");
 const Solicitud_Bitacora = require("./Database/Models/Solicitud_Bitacora");
-const { Op } = require("sequelize");
 
 //Utilidades
 const estatusLexico = {
@@ -39,6 +41,9 @@ const PORT = process.env.PORT || 3001;
 //CORS
 app.use(cors());
 
+//Documentos
+app.use(express.static(__dirname));
+
 //Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -50,6 +55,21 @@ var transporter = nodemailer.createTransport({
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASSWORD,
   },
+});
+
+//Multer usage
+var storage = multer.diskStorage({
+  destination: (req, file, callBack) => {
+    callBack(null, __dirname + "/Documentos");
+  },
+  filename: (req, file, callBack) => {
+    callBack(null, Date.now() + "_" + file.originalname);
+  },
+});
+
+//Multer almacenar
+var upload = multer({
+  storage: storage,
 });
 
 //Rutas
@@ -195,6 +215,15 @@ app.post("/SendEmail", function (req, res) {
       "\n    -Constancia de inscripcion del alumno en el ciclo escolar vigente." +
       "\n \n \nEstaremos al pendiente, al ser aprobados los documentos, porfavor, ¡¡¡seguir las indicaciones de la imagen adjuntada!!!." +
       "\nEn caso de duda, mandar mensaje a ventanillaith@hermosillo.tecnm.mx o ir a Servicios Escolares.",
+
+    attachments: [
+      {
+        path: "/home/ajolotepc/Repositories/SDT_ITH_DSE_API/Estaticos/Requisitos.jpeg",
+      },
+      {
+        path: "/home/ajolotepc/Repositories/SDT_ITH_DSE_API/Estaticos/SOLICITUD DE RECLAMACIÓN VIDA-1.pdf",
+      },
+    ],
   };
 
   transporter.sendMail(mailOptions, function (error, info) {
@@ -253,7 +282,7 @@ app.post("/RequestUserApplication", function (req, res) {
       { model: Tramite, attributes: ["id_Tramite", "nombre_Tramite"] },
       {
         model: Documento,
-        attributes: ["id_Documento", "nombre_Documento", "archivo_Documento"],
+        attributes: ["id_Documento", "nombre_Documento", "ruta_Documento"],
       },
     ],
     where: {
@@ -391,19 +420,26 @@ app.post("/updateApplication", function (req, res) {
 });
 
 //Subir documentos al sistema
-app.post("/UploadDocuments", function (req, res) {
-  Documento.create({
-    nombre_Documento: req.body.documentoName,
-    archivo_Documento: req.body.bytes,
-    solicitud_Vinculada: req.body.idSolicitud,
-  })
-    .then(() => {
-      res.send({ Code: 1 });
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
+app.post("/UploadDocuments", upload.any("pdf"), function (req, res) {
+  if (!req.files) {
+    console.log("No files to upload");
+    return res.send({ Code: 0 });
+  } else {
+    for (var indice = 0; indice < req.files.length; indice++) {
+      Documento.create({
+        nombre_Documento: req.files[indice].originalname,
+        ruta_Documento: req.files[indice].path,
+        solicitud_Vinculada: req.body.text,
+      })
+        .then(() => {
+          return res.send({ Code: 1 });
+        })
+        .catch((error) => {
+          console.log(error);
+          return res.send({ Code: -1 });
+        });
+    }
+  }
 });
 
 //Obtener documentos de la solicitud

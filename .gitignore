@@ -36,3 +36,4 @@ lerna-debug.log*
 
 #Archivo de variables sensibles
 .env
+/Documentos

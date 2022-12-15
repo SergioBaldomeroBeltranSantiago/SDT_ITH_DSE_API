@@ -15,7 +15,7 @@ Solicitud.init(
     },
     folio_Solicitud: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     fecha_Solicitud: {
       type: DataTypes.DATEONLY,
