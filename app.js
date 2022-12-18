@@ -31,7 +31,7 @@ const estatusLexico = {
   8: "Se han recibido nuevos documentos en formato digital, espera a que se revisen",
   9: "Los nuevos documentos han sido rechazados, por favor sube nuevos documentos",
   10: "La solicitud ha sido reenviada a la aseguradora",
-  11: "EL finiquito ha sido enviado, necesitas venir en persona a firmarlo",
+  11: "El finiquito ha sido enviado, necesitas venir en persona a firmarlo",
   12: "Solicitud terminada",
 };
 
@@ -218,10 +218,10 @@ app.post("/SendEmail", function (req, res) {
 
     attachments: [
       {
-        path: "/home/ajolotepc/Repositories/SDT_ITH_DSE_API/Estaticos/Requisitos.jpeg",
+        path: "./Estaticos/Requisitos.jpeg",
       },
       {
-        path: "/home/ajolotepc/Repositories/SDT_ITH_DSE_API/Estaticos/SOLICITUD DE RECLAMACIÓN VIDA-1.pdf",
+        path: "./Estaticos/SOLICITUD_DE_RECLAMACIÓN_VIDA.pdf",
       },
     ],
   };
@@ -272,6 +272,7 @@ app.post("/RequestUserApplication", function (req, res) {
       "fecha_Actualizacion",
       "estatus_Actual",
       "retroalimentacion_Actual",
+      "folio_Solicitud"
     ],
     include: [
       {
@@ -396,6 +397,7 @@ app.post("/updateApplication", function (req, res) {
         {
           estatus_Actual: req.body.nuevoEstatus,
           fecha_Actualizacion: moment(new Date(), "YYYY-MM-DD"),
+          folio_Solicitud: req.body.folio,
           retroalimentacion_Actual:
             estatusLexico[req.body.nuevoEstatus] + ". " + req.body.retroNueva,
         },
@@ -465,7 +467,7 @@ app.post("/GetConteoSolicitudes", function (req, res) {
     },
   })
     .then((result) => {
-      res.send(result);
+      res.send(result.count.toString());
     })
     .catch((error) => {
       console.log(error);
