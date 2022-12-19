@@ -7,7 +7,6 @@ const nodemailer = require("nodemailer");
 const moment = require("moment");
 const { Op } = require("sequelize");
 const multer = require("multer");
-const path = require("path");
 
 //Patron GOF - Singleton
 const Usuario = require("./Database/Models/Usuario");
@@ -272,7 +271,7 @@ app.post("/RequestUserApplication", function (req, res) {
       "fecha_Actualizacion",
       "estatus_Actual",
       "retroalimentacion_Actual",
-      "folio_Solicitud"
+      "folio_Solicitud",
     ],
     include: [
       {
@@ -392,7 +391,6 @@ app.post("/updateApplication", function (req, res) {
     solicitud_Asociada: req.body.id,
   })
     .then(() => {
-      console.log(req.body.retroNueva);
       Solicitud.update(
         {
           estatus_Actual: req.body.nuevoEstatus,
@@ -477,12 +475,16 @@ app.post("/GetConteoSolicitudes", function (req, res) {
 });
 
 //Obtener un solo documento para su descarga
-app.post("/ObtainDocument", function (req, res) {
-  Documento.findByPk(req.body.documentoID, {
-    attributes: ["archivo_Documento"],
+app.get("/ObtainDocument", function (req, res) {
+  Documento.findByPk(req.query.documentoID, {
+    attributes: ["nombre_Documento", "ruta_Documento"],
   })
     .then((result) => {
-      res.send(result);
+      res.download(result.ruta_Documento, (err) => {
+        if (err) {
+          res.send({ Code: -1 });
+        }
+      });
     })
     .catch((error) => {
       console.log(error);
