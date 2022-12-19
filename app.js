@@ -218,10 +218,10 @@ app.post("/SendEmail", function (req, res) {
 
     attachments: [
       {
-        path: "/home/ajolotepc/Repositories/SDT_ITH_DSE_API/Estaticos/Requisitos.jpeg",
+        path: __dirname + "/Estaticos/Requisitos.jpeg",
       },
       {
-        path: "/home/ajolotepc/Repositories/SDT_ITH_DSE_API/Estaticos/SOLICITUD DE RECLAMACIÓN VIDA-1.pdf",
+        path: __dirname + "/Estaticos/SOLICITUD DE RECLAMACIÓN VIDA-1.pdf",
       },
     ],
   };
@@ -423,8 +423,8 @@ app.post("/updateApplication", function (req, res) {
 app.post("/UploadDocuments", upload.any("pdf"), function (req, res) {
   if (!req.files) {
     console.log("No files to upload");
-    return res.send({ Code: 0 });
   } else {
+    let successUpload = true;
     for (var indice = 0; indice < req.files.length; indice++) {
       Documento.create({
         nombre_Documento: req.files[indice].originalname,
@@ -432,13 +432,14 @@ app.post("/UploadDocuments", upload.any("pdf"), function (req, res) {
         solicitud_Vinculada: req.body.text,
       })
         .then(() => {
-          return res.send({ Code: 1 });
+          successUpload = true;
         })
         .catch((error) => {
           console.log(error);
-          return res.send({ Code: -1 });
+          successUpload = false;
         });
     }
+    res.send({ successUpload });
   }
 });
 
