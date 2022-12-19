@@ -492,6 +492,114 @@ app.get("/ObtainDocument", function (req, res) {
     });
 });
 
+app.get("/ObtenerConteoEstadistico", function (req, res) {
+  var estadisticas = {
+    sTotales: 0,
+    sProgreso: 0,
+    sErrores: 0,
+  };
+
+  //Solicitudes totales
+  Solicitud.findAndCountAll({
+    where: {
+      fecha_Solicitud: {
+        [Op.between]: [req.query.lowerRange, req.query.upperRange],
+      },
+    },
+  })
+    .then((result) => {
+      estadisticas.sTotales = result.count;
+      //Solicitudes en progreso y terminadas
+      Solicitud.findAndCountAll({
+        where: {
+          fecha_Solicitud: {
+            [Op.between]: [req.query.lowerRange, req.query.upperRange],
+          },
+          estatus_Actual: {
+            [Op.between]: [0, 11],
+          },
+        },
+      })
+        .then((result) => {
+          estadisticas.sProgreso = result.count;
+          //Errores actuales
+          Solicitud.findAndCountAll({
+            where: {
+              fecha_Solicitud: {
+                [Op.between]: [req.query.lowerRange, req.query.upperRange],
+              },
+              estatus_Actual: {
+                [Op.or]: [3, 7, 9],
+              },
+            },
+          })
+            .then((result) => {
+              estadisticas.sErrores = result.count;
+              //Errores previos
+              Solicitud_Bitacora.findAndCountAll({
+                where: {
+                  fecha_Cambio: {
+                    [Op.between]: [req.query.lowerRange, req.query.upperRange],
+                  },
+                  estatus_Anterior: {
+                    [Op.or]: [3, 7, 9],
+                  },
+                },
+              })
+                .then((result) => {
+                  estadisticas.sErrores += result.count;
+                  res.send(estadisticas);
+                })
+                .catch((error) => {
+                  console.log(error);
+                });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+});
+
+app.post("/SubirUsuarios", function (req, res) {
+  Usuario.findOrCreate({
+    where: { matricula: req.body.matriculaUser },
+    defaults: {
+      matricula: req.body.matriculaUser,
+      nombre_Completo: req.body.nombreUser,
+      contraseña: req.body.contraseñaUser,
+      correo_e: req.body.correoUser,
+    },
+  })
+    .then((result) => {
+      Estudiante.findOrCreate({
+        where: { matricula_Estudiante: req.body.matriculaUser },
+        defaults: {
+          matricula_Estudiante: req.body.matriculaUser,
+          carrera: req.body.carreraUser,
+          semestre: req.body.semestreUser,
+        },
+      })
+        .then((result) => {
+          res.send({ Code: 1 });
+        })
+        .catch((error) => {
+          console.log(error);
+          res.send({ Code: -1 });
+        });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
 //Inicializar el servidor
 app.listen(PORT, function () {
   //Conectarse a la base de datos al iniciar el servidor
