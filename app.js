@@ -7,6 +7,7 @@ const nodemailer = require("nodemailer");
 const moment = require("moment");
 const { Op } = require("sequelize");
 const multer = require("multer");
+const reader = require("xlsx");
 
 //Patron GOF - Singleton
 const Usuario = require("./Database/Models/Usuario");
@@ -33,6 +34,10 @@ const estatusLexico = {
   11: "El finiquito ha sido enviado, necesitas venir en persona a firmarlo",
   12: "Solicitud terminada",
 };
+
+const fileStatistics = reader.readFile(
+  "./Estaticos/Prototipo - Estadistico.xlsx"
+);
 
 //Definimos el puerto a utilizar
 const PORT = process.env.PORT || 3001;
@@ -493,11 +498,15 @@ app.get("/ObtainDocument", function (req, res) {
 });
 
 app.get("/ObtenerConteoEstadistico", function (req, res) {
-  var estadisticas = {
-    sTotales: 0,
-    sProgreso: 0,
-    sErrores: 0,
-  };
+  let estadisticas = [
+    {
+      Solicitudes_En_Total: 0,
+      Solicitudes_En_Progreso: 0,
+      Errores_Presentados: 0,
+      Porcentaje_Finalización: 0,
+      Porcentaje_Errores: 0,
+    },
+  ];
 
   //Solicitudes totales
   Solicitud.findAndCountAll({
@@ -508,7 +517,7 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
     },
   })
     .then((result) => {
-      estadisticas.sTotales = result.count;
+      estadisticas.Solicitudes_En_Total = result.count;
       //Solicitudes en progreso y terminadas
       Solicitud.findAndCountAll({
         where: {
@@ -521,7 +530,7 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
         },
       })
         .then((result) => {
-          estadisticas.sProgreso = result.count;
+          estadisticas.Solicitudes_En_Progreso = result.count;
           //Errores actuales
           Solicitud.findAndCountAll({
             where: {
@@ -534,7 +543,7 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
             },
           })
             .then((result) => {
-              estadisticas.sErrores = result.count;
+              estadisticas.Errores_Presentados = result.count;
               //Errores previos
               Solicitud_Bitacora.findAndCountAll({
                 where: {
@@ -547,7 +556,28 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
                 },
               })
                 .then((result) => {
-                  estadisticas.sErrores += result.count;
+                  estadisticas.Errores_Presentados += result.count;
+                  estadisticas.Porcentaje_Finalización =
+                    estadisticas.Solicitudes_En_Progreso /
+                    estadisticas.Solicitudes_En_Total;
+                  estadisticas.Porcentaje_Errores =
+                    estadisticas.Errores_Presentados /
+                    estadisticas.Porcentaje_Finalización;
+                  const ws = reader.utils.json_to_sheet(estadisticas);
+                  reader.utils.book_append_sheet(
+                    fileStatistics,
+                    ws,
+                    fileStatistics.SheetNames.length +
+                      1 +
+                      " - " +
+                      req.query.lowerRange +
+                      " - " +
+                      req.query.upperRange
+                  );
+                  reader.writeFile(
+                    fileStatistics,
+                    "./Estaticos/Prototipo - Estadistico.xlsx"
+                  );
                   res.send(estadisticas);
                 })
                 .catch((error) => {
