@@ -578,7 +578,14 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
                     fileStatistics,
                     "./Estaticos/Prototipo - Estadistico.xlsx"
                   );
-                  res.send(estadisticas);
+                  res.download(
+                    "./Estaticos/Prototipo - Estadistico.xlsx",
+                    (err) => {
+                      if (err) {
+                        res.send({ Code: -1 });
+                      }
+                    }
+                  );
                 })
                 .catch((error) => {
                   console.log(error);
