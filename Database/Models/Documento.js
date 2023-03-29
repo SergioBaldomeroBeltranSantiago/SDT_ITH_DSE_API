@@ -5,12 +5,18 @@ const Solicitud = require("./Solicitud");
 class Documento extends Model {}
 Documento.init(
   {
-    nombre_D: {
-      type: DataTypes.STRING(40),
+    id_Documento: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    nombre_Documento: {
+      type: DataTypes.TEXT,
       allowNull: false,
     },
-    documento_Data: {
-      type: DataTypes.BLOB,
+    ruta_Documento: {
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },
@@ -24,13 +30,9 @@ Documento.init(
 
 Solicitud.hasMany(Documento, {
   foreignKey: {
-    name: "Solicitud",
+    name: "solicitud_Vinculada",
     allowNull: false,
   },
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
 });
-
-Documento.removeAttribute("id");
 
 module.exports = Documento;

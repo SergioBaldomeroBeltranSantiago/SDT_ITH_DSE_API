@@ -9,15 +9,15 @@ Usuario.init(
       allowNull: false,
       primaryKey: true,
     },
-    nombre_C: {
-      type: DataTypes.STRING(50),
+    nombre_Completo: {
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     contraseña: {
-      type: DataTypes.STRING(12),
+      type: DataTypes.STRING(8),
       allowNull: false,
     },
-    correo_e: DataTypes.STRING(30),
+    correo_e: { type: DataTypes.TEXT },
   },
   { sequelize, modelName: "Usuario", tableName: "Usuarios", timestamps: false }
 );

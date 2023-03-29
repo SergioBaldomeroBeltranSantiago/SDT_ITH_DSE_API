@@ -1,24 +1,33 @@
 const { Model, DataTypes } = require("sequelize");
 const sequelize = require("../db");
+const Tramite_M = require("./Tramite_M");
 
 class Imagen extends Model {}
 Imagen.init(
   {
-    id_I: {
-      type: DataTypes.STRING(10),
-      allowNull: false,
+    id_Imagen: {
+      type: DataTypes.INTEGER,
       primaryKey: true,
+      allowNull: false,
+      autoIncrement: true,
     },
-    nombre_I: {
-      type: DataTypes.STRING(20),
+    nombre_Imagen: {
+      type: DataTypes.TEXT,
       allowNull: false,
     },
-    Imagen_Data: {
+    archivo_Imagen: {
       type: DataTypes.BLOB,
       allowNull: false,
     },
   },
   { sequelize, modelName: "Imagen", tableName: "Imagenes", timestamps: false }
 );
+
+Imagen.hasMany(Tramite_M, {
+  foreignKey: {
+    name: "imagen_Asociada",
+    allowNull: true,
+  },
+});
 
 module.exports = Imagen;

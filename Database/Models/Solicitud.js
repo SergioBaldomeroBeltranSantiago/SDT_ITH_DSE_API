@@ -7,25 +7,30 @@ const Usuario = require("./Usuario");
 class Solicitud extends Model {}
 Solicitud.init(
   {
-    id_S: {
-      type: DataTypes.STRING(10),
+    id_Solicitud: {
+      type: DataTypes.INTEGER,
       primaryKey: true,
       allowNull: false,
+      autoIncrement: true,
     },
-    fecha_Sol: {
+    folio_Solicitud: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    fecha_Solicitud: {
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
-    fecha_Act: {
+    fecha_Actualizacion: {
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
-    estatus: {
+    estatus_Actual: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    retroalimentacion: {
-      type: DataTypes.STRING,
+    retroalimentacion_Actual: {
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },
@@ -39,38 +44,30 @@ Solicitud.init(
 
 Usuario.hasMany(Solicitud, {
   foreignKey: {
-    name: "estudiante",
+    name: "estudiante_Solicitante",
     allowNull: false,
   },
-  onUpdate: "CASCADE",
-  onDelete: "CASCADE",
 });
 
 Solicitud.belongsTo(Usuario, {
   foreignKey: {
-    name: "estudiante",
+    name: "estudiante_Solicitante",
     allowNull: false,
   },
-  onUpdate: "CASCADE",
-  onDelete: "CASCADE",
 });
 
 Tramite.hasMany(Solicitud, {
   foreignKey: {
-    name: "tramite",
+    name: "tramite_Solicitado",
     allowNull: false,
   },
-  onUpdate: "CASCADE",
-  onDelete: "CASCADE",
 });
 
 Solicitud.belongsTo(Tramite, {
   foreignKey: {
-    name: "tramite",
+    name: "tramite_Solicitado",
     allowNull: false,
   },
-  onUpdate: "CASCADE",
-  onDelete: "CASCADE",
 });
 
 module.exports = Solicitud;
