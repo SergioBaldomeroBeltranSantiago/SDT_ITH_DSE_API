@@ -8,6 +8,8 @@ const moment = require("moment");
 const { Op } = require("sequelize");
 const multer = require("multer");
 const reader = require("xlsx");
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 
 //Patron GOF - Singleton
 const Usuario = require("./Database/Models/Usuario");
@@ -116,6 +118,70 @@ app.post("/Login", function (req, res) {
       console.log(error);
     });
 });
+
+// Restablecer contraseñas
+app.post("/RestorePassword", function(req, res){
+  // Obtener el correo electrónico del usuario desde la solicitud
+  const email = req.body.email;
+  
+  Usuario.findOne({ where: { email: email}})
+    .then((usuario) =>{
+      if(usuario){
+        // Genera una nueva contraseña temporal
+        const newPassword = generateTempPassword();
+
+        // Actualizar la contraseña de usuario en la base de datos
+        usuario.contraseña = newPassword;
+        usuario.save()
+        .then(() => {
+          // Enviar un correo electrónico al usuario con la nueva contraseña temporal
+          sendEmail(correo, newPassword);
+
+          // Enviar una respuesta exitosa al cliente
+          res.send({ Code: 1 });
+        })
+        .catch((error) => {
+          console.log(error);
+
+          // Enviar una respuesta de error al cliente
+          res.send({ Code: -1 });
+        });
+      } else{
+        // Enviar una respuesta al cliente indicando que el correo electrónico no existe
+        res.send({ Code: 0 });
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+
+      // Enviar una respuesta de error al cliente
+      res.send({ Code: -1 });
+    });
+})
+
+// Función para generar una contraseña temporal
+function generateTempPassword(){
+  const randomBytes = crypto.randomBytes(4).toString("hex");
+  return bcrypt.hashSync(randomBytes, 10);
+}
+
+// Función para enviar un correo electrónico 
+function sendEmail(correo, newPassword){
+  const mailOptions = {
+    from: process.env.MAIL_USER,
+    to: correo,
+    subject: "Restablecimiento de Contraseña",
+    text: `Tu nueva contraseña temporal es: ${newPassword}. Por favor, cambia tu contraseña después de iniciar sesión.`,
+  }
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if(error){
+      console.log(error);
+    } else {
+      console.log("Correo electrónico enviado: " + info.response);
+    }
+  });
+}
 
 //Conseguir datos del usuario activo en sesión, si es admin
 app.post("/AdminInfo", function (req, res) {
