@@ -187,6 +187,7 @@ function sendEmail(correo, newPassword) {
 app.post("/AdminInfo", function (req, res) {
   Usuario.findByPk(req.body.loginID)
     .then((result) => {
+      //console.log(result);
       res.send(result);
     })
     .catch((error) => {
@@ -731,6 +732,55 @@ app.post("/SubirUsuarios", function (req, res) {
       console.log(error);
       res.send({ Code: -1 });
     });
+});
+
+//Alta de estudiantes
+app.post("/AltaEstudiante", function (req, res) {
+  Usuario.create({
+      matricula: req.body.matriculaUser,
+      nombre_Completo: req.body.nombreUser,
+      contraseña: req.body.contraseñaUser,
+      correo_e: req.body.correoUser
+  })
+    .then((result) => {
+      Estudiante.create({
+          matricula_Estudiante: req.body.matriculaUser,
+          carrera: req.body.carreraUser,
+          semestre: req.body.semestreUser
+      })
+        .then((result) => {
+          res.send({ Code: 1 });
+        })
+        .catch((error) => {
+          console.log(error);
+          res.send({ Code: -1 });
+        });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
+//Alta de encargados
+app.post("/AltaEncargados", function (req, res) {
+  Usuario.create({
+      matricula: req.body.matriculaUser,
+      nombre_Completo: req.body.nombreUser,
+      contraseña: req.body.contraseñaUser,
+      correo_e: req.body.correoUser
+  })
+  .then((result) => {
+    res.send({ Code: 1 });
+  })
+  .catch((error) => {
+    console.log(error);
+    res.send({ Code: -1 });
+  })
+  .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+  });
 });
 
 //Inicializar el servidor
