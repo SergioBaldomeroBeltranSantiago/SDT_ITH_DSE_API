@@ -744,76 +744,13 @@ app.post("/AltaEncargados", function (req, res) {
     res.send({ Code: 1 });
   })
   .catch((error) => {
+    console.log(error);
+    res.send({ Code: -1 });
+  })
+  .catch((error) => {
       console.log(error);
       res.send({ Code: -1 });
   });
-});
-
-//Funcion de busqueda de Encargada
-app.post("/searchEncargada", function (req, res) {
-  Usuario.findAll({
-    where: {matricula: req.body.matriculaUser},
-    attributes: [
-      "nombre_Completo",
-      "correo_e",
-    ]
-    })
-    .then((result) => {
-      Estudiante.count({
-        where: {matricula_Estudiante: req.body.matriculaUser}
-      })
-      .then((resultado) => {
-        console.log(resultado)
-        if(resultado == 0){
-          res.send({result, Code: 1})
-        }
-        else{
-          res.send({Code: -1})
-        }
-      })
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    })
-});
-
-//Funcion de busqueda de Alumnos
-app.post("/searchAlumno", function (req, res) {
-  Estudiante.findAndCountAll({
-    where: {matricula_Estudiante: req.body.matriculaUser},
-    attributes: [
-      "carrera",
-      "semestre",
-    ]
-    })
-    .then((result) => {
-      let datos = result.rows;
-      let cantidad = result.count
-      Usuario.findAll({
-        where: {matricula: req.body.matriculaUser},
-        attributes: [
-          "nombre_Completo",
-          "correo_e",
-        ]
-        })
-        .then((result) => {
-          if(cantidad == 1){
-            res.send({result, datos, Code: 1})
-          }
-          else{
-            res.send({Code: -1})
-          }
-        })
-        .catch((error) => {
-          console.log(error);
-          res.send({ Code: -1 });
-        })
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    })
 });
 
 //Inicializar el servidor
