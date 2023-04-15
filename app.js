@@ -120,33 +120,33 @@ app.post("/Login", function (req, res) {
 });
 
 // Restablecer contraseñas
-app.post("/RestorePassword", function(req, res){
+app.post("/RestorePassword", function (req, res) {
   // Obtener el correo electrónico del usuario desde la solicitud
   const email = req.body.email;
-  
-  Usuario.findOne({ where: { email: email}})
-    .then((usuario) =>{
-      if(usuario){
+
+  Usuario.findOne({ where: { email: email } })
+    .then((usuario) => {
+      if (usuario) {
         // Genera una nueva contraseña temporal
         const newPassword = generateTempPassword();
 
         // Actualizar la contraseña de usuario en la base de datos
         usuario.contraseña = newPassword;
         usuario.save()
-        .then(() => {
-          // Enviar un correo electrónico al usuario con la nueva contraseña temporal
-          sendEmail(correo, newPassword);
+          .then(() => {
+            // Enviar un correo electrónico al usuario con la nueva contraseña temporal
+            sendEmail(correo, newPassword);
 
-          // Enviar una respuesta exitosa al cliente
-          res.send({ Code: 1 });
-        })
-        .catch((error) => {
-          console.log(error);
+            // Enviar una respuesta exitosa al cliente
+            res.send({ Code: 1 });
+          })
+          .catch((error) => {
+            console.log(error);
 
-          // Enviar una respuesta de error al cliente
-          res.send({ Code: -1 });
-        });
-      } else{
+            // Enviar una respuesta de error al cliente
+            res.send({ Code: -1 });
+          });
+      } else {
         // Enviar una respuesta al cliente indicando que el correo electrónico no existe
         res.send({ Code: 0 });
       }
@@ -160,13 +160,13 @@ app.post("/RestorePassword", function(req, res){
 })
 
 // Función para generar una contraseña temporal
-function generateTempPassword(){
+function generateTempPassword() {
   const randomBytes = crypto.randomBytes(4).toString("hex");
   return bcrypt.hashSync(randomBytes, 10);
 }
 
 // Función para enviar un correo electrónico 
-function sendEmail(correo, newPassword){
+function sendEmail(correo, newPassword) {
   const mailOptions = {
     from: process.env.MAIL_USER,
     to: correo,
@@ -175,7 +175,7 @@ function sendEmail(correo, newPassword){
   }
 
   transporter.sendMail(mailOptions, (error, info) => {
-    if(error){
+    if (error) {
       console.log(error);
     } else {
       console.log("Correo electrónico enviado: " + info.response);
@@ -207,6 +207,36 @@ app.post("/StudentInfo", function (req, res) {
   })
     .then((result) => {
       res.send(result);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
+// Editar usuario
+app.put("/EditarUsuario/:id", function (req, res) {
+  const userID = req.params.id;
+  const updatedData = req.body;
+
+  // Buscar el usuario por su ID
+  Usuario.findByPk(userID)
+    .then((usuario) => {
+      if (usuario) {
+        // Actualizar los datos del usuario con los nuevos datos
+        usuario.update(updatedData)
+          .then((updatedUsuario) => {
+            // Enviar la respuesta con el usuario actualizado
+            res.send(updatedUsuario);
+          })
+          .catch((error) => {
+            console.log(error);
+            res.send({ Code: -1 });
+          });
+      } else {
+        // Si el usuario no existe, enviar un código de error
+        res.send({ Code: 0 });
+      }
     })
     .catch((error) => {
       console.log(error);
@@ -635,11 +665,11 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
                     fileStatistics,
                     ws,
                     fileStatistics.SheetNames.length +
-                      1 +
-                      " - " +
-                      req.query.lowerRange +
-                      " - " +
-                      req.query.upperRange
+                    1 +
+                    " - " +
+                    req.query.lowerRange +
+                    " - " +
+                    req.query.upperRange
                   );
                   reader.writeFile(
                     fileStatistics,
