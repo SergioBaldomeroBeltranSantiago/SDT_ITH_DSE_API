@@ -295,6 +295,19 @@ app.post("/RequestTransactionList", function (req, res) {
     });
 });
 
+//Conseguir la lista de requisistos del tramite
+app.post("/RequisitosTramite", function (req, res) {
+  Tramite_M.findAndCountAll({
+    attributes: ["id_Tramite_M", "texto", "tipo", "orden"]
+  })
+    .then((result) => {
+      res.send({result, Code: 1});
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+});
+
 //Enviar un correo a un destinatario
 app.post("/SendEmail", function (req, res) {
   var mailOptions = {
