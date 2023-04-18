@@ -122,20 +122,21 @@ app.post("/Login", function (req, res) {
 // Restablecer contraseñas
 app.post("/RestorePassword", function (req, res) {
   // Obtener el correo electrónico del usuario desde la solicitud
-  const email = req.body.email;
+  const matricula = req.body.matriculaUser
+  //const correo = req.body.correoUser;
 
-  Usuario.findOne({ where: { email: email } })
+  Usuario.findOne({ where: { matricula: matricula } })
     .then((usuario) => {
       if (usuario) {
         // Genera una nueva contraseña temporal
-        const newPassword = generateTempPassword();
+        const newPassword = req.body.matriculaUser;
 
         // Actualizar la contraseña de usuario en la base de datos
         usuario.contraseña = newPassword;
         usuario.save()
           .then(() => {
             // Enviar un correo electrónico al usuario con la nueva contraseña temporal
-            sendEmail(correo, newPassword);
+            //sendEmail(correo, newPassword);
 
             // Enviar una respuesta exitosa al cliente
             res.send({ Code: 1 });
@@ -785,6 +786,67 @@ app.post("/AltaEncargados", function (req, res) {
   })
   .then((result) => {
     res.send({ Code: 1 });
+  })
+  .catch((error) => {
+    console.log(error);
+    res.send({ Code: -1 });
+  })
+  .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+  });
+});
+
+//Edicion de estudiantes
+app.post("/EditEstudiante", function (req, res) {
+  Usuario.update({
+    nombre_Completo: req.body.nombreUser,
+    correo_e: req.body.correoUser
+},
+{
+  where: {
+    matricula: req.body.matriculaUser,
+  },
+})
+    .then((result) => {
+      Estudiante.update({
+          carrera: req.body.carreraUser,
+          semestre: req.body.semestreUser
+      },{
+        where: {
+          matricula_Estudiante: req.body.matriculaUser
+        }
+      }
+      )
+        .then((result) => {
+          res.send({ Code: result });
+        })
+        .catch((error) => {
+          console.log(error);
+          res.send({ Code: -1 });
+        });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
+//Edicion de encargados
+app.post("/EditEncargados", function (req, res) {
+  //console.log(req.body)
+  Usuario.update({
+      nombre_Completo: req.body.nombreUser,
+      correo_e: req.body.correoUser
+  },
+  {
+    where: {
+      matricula: req.body.matriculaUser,
+    },
+  }
+  )
+  .then((result) => {
+    res.send({ Code: result });
   })
   .catch((error) => {
     console.log(error);
