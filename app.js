@@ -819,7 +819,7 @@ app.post("/EditEstudiante", function (req, res) {
       }
       )
         .then((result) => {
-          res.send({ Code: result });
+          res.send({ Code: 1 });
         })
         .catch((error) => {
           console.log(error);
@@ -846,7 +846,7 @@ app.post("/EditEncargados", function (req, res) {
   }
   )
   .then((result) => {
-    res.send({ Code: result });
+    res.send({ Code: 1 });
   })
   .catch((error) => {
     console.log(error);
