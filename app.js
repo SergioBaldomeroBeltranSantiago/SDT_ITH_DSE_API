@@ -8,6 +8,8 @@ const moment = require("moment");
 const { Op } = require("sequelize");
 const multer = require("multer");
 const reader = require("xlsx");
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 
 //Patron GOF - Singleton
 const Usuario = require("./Database/Models/Usuario");
@@ -117,10 +119,76 @@ app.post("/Login", function (req, res) {
     });
 });
 
+// Restablecer contraseñas
+app.post("/RestorePassword", function (req, res) {
+  // Obtener el correo electrónico del usuario desde la solicitud
+  const matricula = req.body.matriculaUser
+  //const correo = req.body.correoUser;
+
+  Usuario.findOne({ where: { matricula: matricula } })
+    .then((usuario) => {
+      if (usuario) {
+        // Genera una nueva contraseña temporal
+        const newPassword = req.body.matriculaUser;
+
+        // Actualizar la contraseña de usuario en la base de datos
+        usuario.contraseña = newPassword;
+        usuario.save()
+          .then(() => {
+            // Enviar un correo electrónico al usuario con la nueva contraseña temporal
+            //sendEmail(correo, newPassword);
+
+            // Enviar una respuesta exitosa al cliente
+            res.send({ Code: 1 });
+          })
+          .catch((error) => {
+            console.log(error);
+
+            // Enviar una respuesta de error al cliente
+            res.send({ Code: -1 });
+          });
+      } else {
+        // Enviar una respuesta al cliente indicando que el correo electrónico no existe
+        res.send({ Code: 0 });
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+
+      // Enviar una respuesta de error al cliente
+      res.send({ Code: -1 });
+    });
+})
+
+// Función para generar una contraseña temporal
+function generateTempPassword() {
+  const randomBytes = crypto.randomBytes(4).toString("hex");
+  return bcrypt.hashSync(randomBytes, 10);
+}
+
+// Función para enviar un correo electrónico 
+function sendEmail(correo, newPassword) {
+  const mailOptions = {
+    from: process.env.MAIL_USER,
+    to: correo,
+    subject: "Restablecimiento de Contraseña",
+    text: `Tu nueva contraseña temporal es: ${newPassword}. Por favor, cambia tu contraseña después de iniciar sesión.`,
+  }
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Correo electrónico enviado: " + info.response);
+    }
+  });
+}
+
 //Conseguir datos del usuario activo en sesión, si es admin
 app.post("/AdminInfo", function (req, res) {
   Usuario.findByPk(req.body.loginID)
     .then((result) => {
+      //console.log(result);
       res.send(result);
     })
     .catch((error) => {
@@ -140,6 +208,36 @@ app.post("/StudentInfo", function (req, res) {
   })
     .then((result) => {
       res.send(result);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
+// Editar usuario
+app.put("/EditarUsuario/:id", function (req, res) {
+  const userID = req.params.id;
+  const updatedData = req.body;
+
+  // Buscar el usuario por su ID
+  Usuario.findByPk(userID)
+    .then((usuario) => {
+      if (usuario) {
+        // Actualizar los datos del usuario con los nuevos datos
+        usuario.update(updatedData)
+          .then((updatedUsuario) => {
+            // Enviar la respuesta con el usuario actualizado
+            res.send(updatedUsuario);
+          })
+          .catch((error) => {
+            console.log(error);
+            res.send({ Code: -1 });
+          });
+      } else {
+        // Si el usuario no existe, enviar un código de error
+        res.send({ Code: 0 });
+      }
     })
     .catch((error) => {
       console.log(error);
@@ -192,6 +290,19 @@ app.post("/RequestTransactionList", function (req, res) {
   })
     .then((consult) => {
       res.send(consult);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+});
+
+//Conseguir la lista de requisistos del tramite
+app.post("/RequisitosTramite", function (req, res) {
+  Tramite_M.findAndCountAll({
+    attributes: ["id_Tramite_M", "texto", "tipo", "orden"]
+  })
+    .then((result) => {
+      res.send({result, Code: 1});
     })
     .catch((error) => {
       console.log(error);
@@ -568,11 +679,11 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
                     fileStatistics,
                     ws,
                     fileStatistics.SheetNames.length +
-                      1 +
-                      " - " +
-                      req.query.lowerRange +
-                      " - " +
-                      req.query.upperRange
+                    1 +
+                    " - " +
+                    req.query.lowerRange +
+                    " - " +
+                    req.query.upperRange
                   );
                   reader.writeFile(
                     fileStatistics,
@@ -635,6 +746,183 @@ app.post("/SubirUsuarios", function (req, res) {
       console.log(error);
       res.send({ Code: -1 });
     });
+});
+
+//Alta de estudiantes
+app.post("/AltaEstudiante", function (req, res) {
+  Usuario.create({
+      matricula: req.body.matriculaUser,
+      nombre_Completo: req.body.nombreUser,
+      contraseña: req.body.contraseñaUser,
+      correo_e: req.body.correoUser
+  })
+    .then((result) => {
+      Estudiante.create({
+          matricula_Estudiante: req.body.matriculaUser,
+          carrera: req.body.carreraUser,
+          semestre: req.body.semestreUser
+      })
+        .then((result) => {
+          res.send({ Code: 1 });
+        })
+        .catch((error) => {
+          console.log(error);
+          res.send({ Code: -1 });
+        });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
+//Alta de encargados
+app.post("/AltaEncargados", function (req, res) {
+  Usuario.create({
+      matricula: req.body.matriculaUser,
+      nombre_Completo: req.body.nombreUser,
+      contraseña: req.body.contraseñaUser,
+      correo_e: req.body.correoUser
+  })
+  .then((result) => {
+    res.send({ Code: 1 });
+  })
+  .catch((error) => {
+    console.log(error);
+    res.send({ Code: -1 });
+  })
+  .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+  });
+});
+
+//Edicion de estudiantes
+app.post("/EditEstudiante", function (req, res) {
+  Usuario.update({
+    nombre_Completo: req.body.nombreUser,
+    correo_e: req.body.correoUser
+},
+{
+  where: {
+    matricula: req.body.matriculaUser,
+  },
+})
+    .then((result) => {
+      Estudiante.update({
+          carrera: req.body.carreraUser,
+          semestre: req.body.semestreUser
+      },{
+        where: {
+          matricula_Estudiante: req.body.matriculaUser
+        }
+      }
+      )
+        .then((result) => {
+          res.send({ Code: 1 });
+        })
+        .catch((error) => {
+          console.log(error);
+          res.send({ Code: -1 });
+        });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
+//Edicion de encargados
+app.post("/EditEncargados", function (req, res) {
+  //console.log(req.body)
+  Usuario.update({
+      nombre_Completo: req.body.nombreUser,
+      correo_e: req.body.correoUser
+  },
+  {
+    where: {
+      matricula: req.body.matriculaUser,
+    },
+  }
+  )
+  .then((result) => {
+    res.send({ Code: 1 });
+  })
+  .catch((error) => {
+    console.log(error);
+    res.send({ Code: -1 });
+  })
+  .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+  });
+});
+
+//Funcion de busqueda de Encargada
+app.post("/searchEncargada", function (req, res) {
+  Usuario.findAll({
+    where: {matricula: req.body.matriculaUser},
+    attributes: [
+      "nombre_Completo",
+      "correo_e",
+    ]
+    })
+    .then((result) => {
+      Estudiante.count({
+        where: {matricula_Estudiante: req.body.matriculaUser}
+      })
+      .then((resultado) => {
+        console.log(resultado)
+        if(resultado == 0){
+          res.send({result, Code: 1})
+        }
+        else{
+          res.send({Code: -1})
+        }
+      })
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    })
+});
+
+//Funcion de busqueda de Alumnos
+app.post("/searchAlumno", function (req, res) {
+  Estudiante.findAndCountAll({
+    where: {matricula_Estudiante: req.body.matriculaUser},
+    attributes: [
+      "carrera",
+      "semestre",
+    ]
+    })
+    .then((result) => {
+      let datos = result.rows;
+      let cantidad = result.count
+      Usuario.findAll({
+        where: {matricula: req.body.matriculaUser},
+        attributes: [
+          "nombre_Completo",
+          "correo_e",
+        ]
+        })
+        .then((result) => {
+          if(cantidad == 1){
+            res.send({result, datos, Code: 1})
+          }
+          else{
+            res.send({Code: -1})
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          res.send({ Code: -1 });
+        })
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    })
 });
 
 //Inicializar el servidor
