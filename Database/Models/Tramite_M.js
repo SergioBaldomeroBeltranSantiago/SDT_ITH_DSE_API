@@ -11,6 +11,7 @@ Tramite_M.init(
       allowNull: false,
       autoIncrement: true,
     },
+    titulo: { type: DataTypes.TEXT, allowNull: false },
     texto: {
       type: DataTypes.TEXT,
       allowNull: false,
