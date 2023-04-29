@@ -11,6 +11,10 @@ const reader = require("xlsx");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
+//Enrutamiento
+const GestorTramites = require("./Routes/GestorTramites");
+app.use("/GestionTramites", GestorTramites);
+
 //Patron GOF - Singleton
 const Usuario = require("./Database/Models/Usuario");
 const Estudiante = require("./Database/Models/Estudiante");
@@ -86,7 +90,6 @@ app.get("/", function (req, res) {
 //Login
 app.post("/Login", function (req, res) {
   //Buscar si existe el registro de usuario
-
   Usuario.findByPk(req.body.id_number)
     .then((result) => {
       //Si si existe, checar si coincide usuario y contraseña
@@ -122,7 +125,7 @@ app.post("/Login", function (req, res) {
 // Restablecer contraseñas
 app.post("/RestorePassword", function (req, res) {
   // Obtener el correo electrónico del usuario desde la solicitud
-  const matricula = req.body.matriculaUser
+  const matricula = req.body.matriculaUser;
   //const correo = req.body.correoUser;
 
   Usuario.findOne({ where: { matricula: matricula } })
@@ -133,7 +136,8 @@ app.post("/RestorePassword", function (req, res) {
 
         // Actualizar la contraseña de usuario en la base de datos
         usuario.contraseña = newPassword;
-        usuario.save()
+        usuario
+          .save()
           .then(() => {
             // Enviar un correo electrónico al usuario con la nueva contraseña temporal
             //sendEmail(correo, newPassword);
@@ -158,7 +162,7 @@ app.post("/RestorePassword", function (req, res) {
       // Enviar una respuesta de error al cliente
       res.send({ Code: -1 });
     });
-})
+});
 
 // Función para generar una contraseña temporal
 function generateTempPassword() {
@@ -166,14 +170,14 @@ function generateTempPassword() {
   return bcrypt.hashSync(randomBytes, 10);
 }
 
-// Función para enviar un correo electrónico 
+// Función para enviar un correo electrónico
 function sendEmail(correo, newPassword) {
   const mailOptions = {
     from: process.env.MAIL_USER,
     to: correo,
     subject: "Restablecimiento de Contraseña",
     text: `Tu nueva contraseña temporal es: ${newPassword}. Por favor, cambia tu contraseña después de iniciar sesión.`,
-  }
+  };
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
@@ -225,7 +229,8 @@ app.put("/EditarUsuario/:id", function (req, res) {
     .then((usuario) => {
       if (usuario) {
         // Actualizar los datos del usuario con los nuevos datos
-        usuario.update(updatedData)
+        usuario
+          .update(updatedData)
           .then((updatedUsuario) => {
             // Enviar la respuesta con el usuario actualizado
             res.send(updatedUsuario);
@@ -299,10 +304,10 @@ app.post("/RequestTransactionList", function (req, res) {
 //Conseguir la lista de requisistos del tramite
 app.post("/RequisitosTramite", function (req, res) {
   Tramite_M.findAndCountAll({
-    attributes: ["id_Tramite_M", "texto", "tipo", "orden"]
+    attributes: ["id_Tramite_M", "texto", "tipo", "orden"],
   })
     .then((result) => {
-      res.send({result, Code: 1});
+      res.send({ result, Code: 1 });
     })
     .catch((error) => {
       console.log(error);
@@ -679,11 +684,11 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
                     fileStatistics,
                     ws,
                     fileStatistics.SheetNames.length +
-                    1 +
-                    " - " +
-                    req.query.lowerRange +
-                    " - " +
-                    req.query.upperRange
+                      1 +
+                      " - " +
+                      req.query.lowerRange +
+                      " - " +
+                      req.query.upperRange
                   );
                   reader.writeFile(
                     fileStatistics,
@@ -751,16 +756,16 @@ app.post("/SubirUsuarios", function (req, res) {
 //Alta de estudiantes
 app.post("/AltaEstudiante", function (req, res) {
   Usuario.create({
-      matricula: req.body.matriculaUser,
-      nombre_Completo: req.body.nombreUser,
-      contraseña: req.body.contraseñaUser,
-      correo_e: req.body.correoUser
+    matricula: req.body.matriculaUser,
+    nombre_Completo: req.body.nombreUser,
+    contraseña: req.body.contraseñaUser,
+    correo_e: req.body.correoUser,
   })
     .then((result) => {
       Estudiante.create({
-          matricula_Estudiante: req.body.matriculaUser,
-          carrera: req.body.carreraUser,
-          semestre: req.body.semestreUser
+        matricula_Estudiante: req.body.matriculaUser,
+        carrera: req.body.carreraUser,
+        semestre: req.body.semestreUser,
       })
         .then((result) => {
           res.send({ Code: 1 });
@@ -779,44 +784,48 @@ app.post("/AltaEstudiante", function (req, res) {
 //Alta de encargados
 app.post("/AltaEncargados", function (req, res) {
   Usuario.create({
-      matricula: req.body.matriculaUser,
-      nombre_Completo: req.body.nombreUser,
-      contraseña: req.body.contraseñaUser,
-      correo_e: req.body.correoUser
+    matricula: req.body.matriculaUser,
+    nombre_Completo: req.body.nombreUser,
+    contraseña: req.body.contraseñaUser,
+    correo_e: req.body.correoUser,
   })
-  .then((result) => {
-    res.send({ Code: 1 });
-  })
-  .catch((error) => {
-    console.log(error);
-    res.send({ Code: -1 });
-  })
-  .catch((error) => {
+    .then((result) => {
+      res.send({ Code: 1 });
+    })
+    .catch((error) => {
       console.log(error);
       res.send({ Code: -1 });
-  });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
 });
 
 //Edicion de estudiantes
 app.post("/EditEstudiante", function (req, res) {
-  Usuario.update({
-    nombre_Completo: req.body.nombreUser,
-    correo_e: req.body.correoUser
-},
-{
-  where: {
-    matricula: req.body.matriculaUser,
-  },
-})
+  Usuario.update(
+    {
+      nombre_Completo: req.body.nombreUser,
+      correo_e: req.body.correoUser,
+    },
+    {
+      where: {
+        matricula: req.body.matriculaUser,
+      },
+    }
+  )
     .then((result) => {
-      Estudiante.update({
+      Estudiante.update(
+        {
           carrera: req.body.carreraUser,
-          semestre: req.body.semestreUser
-      },{
-        where: {
-          matricula_Estudiante: req.body.matriculaUser
+          semestre: req.body.semestreUser,
+        },
+        {
+          where: {
+            matricula_Estudiante: req.body.matriculaUser,
+          },
         }
-      }
       )
         .then((result) => {
           res.send({ Code: 1 });
@@ -835,103 +844,96 @@ app.post("/EditEstudiante", function (req, res) {
 //Edicion de encargados
 app.post("/EditEncargados", function (req, res) {
   //console.log(req.body)
-  Usuario.update({
+  Usuario.update(
+    {
       nombre_Completo: req.body.nombreUser,
-      correo_e: req.body.correoUser
-  },
-  {
-    where: {
-      matricula: req.body.matriculaUser,
+      correo_e: req.body.correoUser,
     },
-  }
+    {
+      where: {
+        matricula: req.body.matriculaUser,
+      },
+    }
   )
-  .then((result) => {
-    res.send({ Code: 1 });
-  })
-  .catch((error) => {
-    console.log(error);
-    res.send({ Code: -1 });
-  })
-  .catch((error) => {
+    .then((result) => {
+      res.send({ Code: 1 });
+    })
+    .catch((error) => {
       console.log(error);
       res.send({ Code: -1 });
-  });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
 });
 
 //Funcion de busqueda de Encargada
 app.post("/searchEncargada", function (req, res) {
   Usuario.findAll({
-    where: {matricula: req.body.matriculaUser},
-    attributes: [
-      "nombre_Completo",
-      "correo_e",
-    ]
-    })
+    where: { matricula: req.body.matriculaUser },
+    attributes: ["nombre_Completo", "correo_e"],
+  })
     .then((result) => {
       Estudiante.count({
-        where: {matricula_Estudiante: req.body.matriculaUser}
-      })
-      .then((resultado) => {
-        console.log(resultado)
-        if(resultado == 0){
-          res.send({result, Code: 1})
+        where: { matricula_Estudiante: req.body.matriculaUser },
+      }).then((resultado) => {
+        console.log(resultado);
+        if (resultado == 0) {
+          res.send({ result, Code: 1 });
+        } else {
+          res.send({ Code: -1 });
         }
-        else{
-          res.send({Code: -1})
-        }
-      })
+      });
     })
     .catch((error) => {
       console.log(error);
       res.send({ Code: -1 });
-    })
+    });
 });
 
 //Funcion de busqueda de Alumnos
 app.post("/searchAlumno", function (req, res) {
   Estudiante.findAndCountAll({
-    where: {matricula_Estudiante: req.body.matriculaUser},
-    attributes: [
-      "carrera",
-      "semestre",
-    ]
-    })
+    where: { matricula_Estudiante: req.body.matriculaUser },
+    attributes: ["carrera", "semestre"],
+  })
     .then((result) => {
       let datos = result.rows;
-      let cantidad = result.count
+      let cantidad = result.count;
       Usuario.findAll({
-        where: {matricula: req.body.matriculaUser},
-        attributes: [
-          "nombre_Completo",
-          "correo_e",
-        ]
-        })
+        where: { matricula: req.body.matriculaUser },
+        attributes: ["nombre_Completo", "correo_e"],
+      })
         .then((result) => {
-          if(cantidad == 1){
-            res.send({result, datos, Code: 1})
-          }
-          else{
-            res.send({Code: -1})
+          if (cantidad == 1) {
+            res.send({ result, datos, Code: 1 });
+          } else {
+            res.send({ Code: -1 });
           }
         })
         .catch((error) => {
           console.log(error);
           res.send({ Code: -1 });
-        })
+        });
     })
     .catch((error) => {
       console.log(error);
       res.send({ Code: -1 });
-    })
+    });
 });
 
 //Inicializar el servidor
 app.listen(PORT, function () {
   //Conectarse a la base de datos al iniciar el servidor
+  //Utilizar alter:true para guardar cambios de los modelos a las tablas de SQL, en caso de que no se haga en automatico
+  //Jamas usar force:true a no ser que sea indicado
   sequelize
     .authenticate()
     .then(() => {
-      sequelize.sync().then(() => console.log("Conexion exitosa"));
+      sequelize
+        .sync(/*{ alter: true }*/)
+        .then(() => console.log("Conexion exitosa"));
     })
     .catch((error) => console.log("Error de conexion: ", error));
 });
