@@ -19,7 +19,7 @@ app.use("/GestionTramites", GestorTramites);
 const Usuario = require("./Database/Models/Usuario");
 const Estudiante = require("./Database/Models/Estudiante");
 const Tramite = require("./Database/Models/Tramite");
-const Imagen = require("./Database/Models/Imagen");
+const Descripcion_Menu = require("./Database/Models/Descripcion_Menu");
 const Tramite_M = require("./Database/Models/Tramite_M");
 const Solicitud = require("./Database/Models/Solicitud");
 const Documento = require("./Database/Models/Documento");
@@ -362,9 +362,9 @@ app.post("/SendSeguimientoEmail", function (req, res) {
   var mailOptions = {
     from: process.env.MAIL_USER,
     to: req.body.destinatario,
-    subject: "Solicitud de seguimiento del seguro con folio: " + req.body.folio,
+    subject: "Solicitud de seguimiento del seguro para " + req.body.nombre,
     text:
-      'Buen dia, se le solicita una actualizacion sobre la solicitud con folio "' +
+      'Buen dia, se le solicita una actualizacion sobre la solicitud con la guia de seguimiento "' +
       req.body.folio +
       '", a nombre de "' +
       req.body.nombre +
@@ -517,8 +517,7 @@ app.post("/updateApplication", function (req, res) {
           estatus_Actual: req.body.nuevoEstatus,
           fecha_Actualizacion: moment(new Date(), "YYYY-MM-DD"),
           folio_Solicitud: req.body.folio,
-          retroalimentacion_Actual:
-            estatusLexico[req.body.nuevoEstatus] + ". " + req.body.retroNueva,
+          retroalimentacion_Actual: req.body.retroNueva,
         },
         {
           where: {
@@ -916,6 +915,23 @@ app.post("/searchAlumno", function (req, res) {
           console.log(error);
           res.send({ Code: -1 });
         });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
+//Conseguir datos de las descripciones
+app.post("/infoDescripcionesMenus", function (req, res) {
+  Descripcion_Menu.findAll({
+    where: {
+      id_texto: [1,2,3,4,5,6,7,8,9,10,11,12]
+    },
+  })
+    .then((result) => {
+      //console.log(result);
+      res.send(result);
     })
     .catch((error) => {
       console.log(error);
