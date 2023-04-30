@@ -1,4 +1,4 @@
-//Import
+//Dependencias
 const express = require("express");
 const app = express();
 const sequelize = require("./Database/db");
@@ -13,9 +13,13 @@ const bcrypt = require("bcryptjs");
 
 //Enrutamiento
 const GestorTramites = require("./Routes/GestorTramites");
+const GestorUsuarios = require("./Routes/GestorUsuarios");
+
 app.use("/GestionTramites", GestorTramites);
+app.use("/GestionUsuarios", GestorUsuarios);
 
 //Patron GOF - Singleton
+//Modelos
 const Usuario = require("./Database/Models/Usuario");
 const Estudiante = require("./Database/Models/Estudiante");
 const Tramite = require("./Database/Models/Tramite");
@@ -82,11 +86,11 @@ var upload = multer({
   storage: storage,
 });
 
-//Rutas
 app.get("/", function (req, res) {
   res.send("Patata");
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Login
 app.post("/Login", function (req, res) {
   //Buscar si existe el registro de usuario
@@ -122,6 +126,7 @@ app.post("/Login", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 // Restablecer contraseñas
 app.post("/RestorePassword", function (req, res) {
   // Obtener el correo electrónico del usuario desde la solicitud
@@ -164,6 +169,7 @@ app.post("/RestorePassword", function (req, res) {
     });
 });
 
+//Se va a borrar
 // Función para generar una contraseña temporal
 function generateTempPassword() {
   const randomBytes = crypto.randomBytes(4).toString("hex");
@@ -188,6 +194,7 @@ function sendEmail(correo, newPassword) {
   });
 }
 
+//Se va a transferir a GestorUsuarios.js
 //Conseguir datos del usuario activo en sesión, si es admin
 app.post("/AdminInfo", function (req, res) {
   Usuario.findByPk(req.body.loginID)
@@ -201,6 +208,7 @@ app.post("/AdminInfo", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Conseguir datos del usuario activo en sesión, si es estudiante
 app.post("/StudentInfo", function (req, res) {
   Usuario.findByPk(req.body.loginID, {
@@ -219,6 +227,7 @@ app.post("/StudentInfo", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 // Editar usuario
 app.put("/EditarUsuario/:id", function (req, res) {
   const userID = req.params.id;
@@ -464,6 +473,7 @@ app.post("/NewUserApplication", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Cambiar contraseña y/o correo electronico
 app.post("/UpdateUserInfo", function (req, res) {
   Usuario.count({
@@ -719,6 +729,7 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 app.post("/SubirUsuarios", function (req, res) {
   Usuario.findOrCreate({
     where: { matricula: req.body.matriculaUser },
@@ -752,6 +763,7 @@ app.post("/SubirUsuarios", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Alta de estudiantes
 app.post("/AltaEstudiante", function (req, res) {
   Usuario.create({
@@ -780,6 +792,7 @@ app.post("/AltaEstudiante", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Alta de encargados
 app.post("/AltaEncargados", function (req, res) {
   Usuario.create({
@@ -801,6 +814,7 @@ app.post("/AltaEncargados", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Edicion de estudiantes
 app.post("/EditEstudiante", function (req, res) {
   Usuario.update(
@@ -840,6 +854,7 @@ app.post("/EditEstudiante", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Edicion de encargados
 app.post("/EditEncargados", function (req, res) {
   //console.log(req.body)
@@ -867,6 +882,7 @@ app.post("/EditEncargados", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Funcion de busqueda de Encargada
 app.post("/searchEncargada", function (req, res) {
   Usuario.findAll({
@@ -891,6 +907,7 @@ app.post("/searchEncargada", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Funcion de busqueda de Alumnos
 app.post("/searchAlumno", function (req, res) {
   Estudiante.findAndCountAll({
@@ -926,7 +943,7 @@ app.post("/searchAlumno", function (req, res) {
 app.post("/infoDescripcionesMenus", function (req, res) {
   Descripcion_Menu.findAll({
     where: {
-      id_texto: [1,2,3,4,5,6,7,8,9,10,11,12]
+      id_texto: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     },
   })
     .then((result) => {
