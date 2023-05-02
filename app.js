@@ -819,6 +819,7 @@ app.post("/AltaEncargados", function (req, res) {
 app.post("/EditEstudiante", function (req, res) {
   Usuario.update(
     {
+      matricula: req.body.nuevaMatricula,
       nombre_Completo: req.body.nombreUser,
       correo_e: req.body.correoUser,
     },
@@ -860,6 +861,7 @@ app.post("/EditEncargados", function (req, res) {
   //console.log(req.body)
   Usuario.update(
     {
+      matricula: req.body.nuevaMatricula,
       nombre_Completo: req.body.nombreUser,
       correo_e: req.body.correoUser,
     },
