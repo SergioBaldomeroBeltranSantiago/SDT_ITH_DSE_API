@@ -1,13 +1,22 @@
 //Dependencias
+//API
 const express = require("express");
 const app = express();
+//Base de datis
 const sequelize = require("./Database/db");
-const cors = require("cors");
-const nodemailer = require("nodemailer");
-const moment = require("moment");
 const { Op } = require("sequelize");
+//CROSS-ORIGIN-RESOURCE-SHARING
+const cors = require("cors");
+//Correos
+const nodemailer = require("nodemailer");
+//Fecha
+const moment = require("moment");
+//Archivos
 const multer = require("multer");
 const reader = require("xlsx");
+const fs = require("fs");
+const path = require("path");
+//Seguridad
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
@@ -90,40 +99,60 @@ app.get("/", function (req, res) {
   res.send("Patata");
 });
 
-//Se va a transferir a GestorUsuarios.js
-//Login
-app.post("/Login", function (req, res) {
-  //Buscar si existe el registro de usuario
-  Usuario.findByPk(req.body.id_number)
-    .then((result) => {
-      //Si si existe, checar si coincide usuario y contraseña
-      if (result != null) {
-        Usuario.count({
-          where: {
-            matricula: req.body.id_number,
-            contraseña: req.body.password,
-          },
-        })
-          .then((consult) => {
-            if (consult > 0) {
-              //Si si coinciden, se envia codigo de confirmación
-              res.send({ Code: 1 });
-            } else {
-              //Si no coinciden, se envia codigo de contraseña incorrecta
-              res.send({ Code: -1 });
-            }
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-      } else {
-        //Si no existe, se envia codigo de usuario no existente
+//Enviar lista de JSON existentes
+app.get("/ObtenerListaJSON", function (req, res) {
+  fs.readdir("JSON", (error, archivos) => {
+    if (error) {
+      console.log(error);
+      res.send({ Code: 0 });
+    }
+
+    const TitulosJSON = [];
+
+    archivos.forEach((archivo) => {
+      const Info = fs.readFileSync(path.join("JSON", archivo));
+      const JInfo = JSON.parse(Info);
+      TitulosJSON.push(JInfo);
+    });
+
+    if (TitulosJSON.length > 0) {
+      res.send(TitulosJSON);
+    } else {
+      res.send({ Code: 0 });
+    }
+  });
+});
+
+//Modificar JSON existente
+app.post("/ModificarJSON", function (req, res) {
+  fs.readFile(
+    "JSON/" + req.body.JModif.nombreArchivo,
+    "utf8",
+    (error, informacion) => {
+      if (error) {
+        console.log(error);
         res.send({ Code: 0 });
       }
-    })
-    .catch((error) => {
-      console.log(error);
-    });
+
+      const Json = JSON.parse(informacion);
+      Json.cuerpo = req.body.JModif.Cuerpo;
+      Json.destinatario = req.body.JModif.Destinatario;
+      Json.asunto = req.body.JModif.Asunto;
+      Json.adjuntos = req.body.JModif.Adjuntos;
+
+      fs.writeFile(
+        "JSON/" + req.body.JModif.nombreArchivo,
+        JSON.stringify(Json),
+        (error) => {
+          if (error) {
+            console.log(error);
+            res.send({ Code: 0 });
+          }
+          res.send({ Code: 1 });
+        }
+      );
+    }
+  );
 });
 
 //Se va a transferir a GestorUsuarios.js
