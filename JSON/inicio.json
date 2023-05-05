@@ -1,0 +1,7 @@
+{
+    "titulo": "Correo de inicio",
+    "asunto": "Bienvenido, a dado inicio al proceso",
+    "destinatario": "si@gmail.com",
+    "cuerpo": "Lorem ipsum ",
+    "adjuntos": "si.pdf"
+}
