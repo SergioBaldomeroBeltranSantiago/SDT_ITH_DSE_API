@@ -1,7 +1,1 @@
-{
-    "titulo": "Correo de seguimiento",
-    "asunto": "Seguimiento de ...",
-    "destinatario": "si@gmail.com",
-    "cuerpo": "Lorem ipsum ",
-    "adjuntos": "si.pdf"
-}
+{"titulo":"Correo de seguimiento","asunto":"Seguimiento de estudiante","destinatario":"si@gmail.com","cuerpo":"Lorem ipsum ","adjuntos":"documentos adjuntos"}

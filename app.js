@@ -125,8 +125,11 @@ app.get("/ObtenerListaJSON", function (req, res) {
 
 //Modificar JSON existente
 app.post("/ModificarJSON", function (req, res) {
+
+  console.log(req.body)
+
   fs.readFile(
-    "JSON/" + req.body.JModif.nombreArchivo,
+    "JSON/" + req.body.nombreArchivo,
     "utf8",
     (error, informacion) => {
       if (error) {
@@ -135,13 +138,13 @@ app.post("/ModificarJSON", function (req, res) {
       }
 
       const Json = JSON.parse(informacion);
-      Json.cuerpo = req.body.JModif.Cuerpo;
-      Json.destinatario = req.body.JModif.Destinatario;
-      Json.asunto = req.body.JModif.Asunto;
-      Json.adjuntos = req.body.JModif.Adjuntos;
+      Json.cuerpo = req.body.Cuerpo;
+      Json.destinatario = req.body.Destinatario;
+      Json.asunto = req.body.Asunto;
+      Json.adjuntos = req.body.Adjuntos;
 
       fs.writeFile(
-        "JSON/" + req.body.JModif.nombreArchivo,
+        "JSON/" + req.body.nombreArchivo,
         JSON.stringify(Json),
         (error) => {
           if (error) {
