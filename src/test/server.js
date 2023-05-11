@@ -10,6 +10,10 @@ app.get('/test', (req, res) => {
     res.send('patata');
 })
 
+app.post('/test', (req, res) => {
+    res.send('OK');
+});
+
 app.post('/Login',
  body(['id_number', 'password'], 'Campos invalidos').notEmpty().withMessage('Campos requeridos'),
  body('id_number').isInt({min: 0}).withMessage('id_number debe ser entero y positivo'),
@@ -83,7 +87,7 @@ app.post("/UpdateUserInfo", function (req, res) {});
 
 app.post("/updateApplication", function (req, res) {});
 
-app.post("/UploadDocuments", upload.any("pdf"), function (req, res) {});
+// app.post("/UploadDocuments", upload.any("pdf"), function (req, res) {});
 
 app.post("/RetrieveDocuments", function (req, res) {});
 
