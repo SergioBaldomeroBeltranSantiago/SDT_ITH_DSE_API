@@ -1,19 +1,20 @@
-const callback = require('./routes');
+const testGet = require('./routes').testGet
+const testPost = require('./routes').testPost
 
-// test('test that /test return patata', (done) => {
-//     callback('http://localhost:9450/test', (err,data) => {
-//         try {
-//             expect(data).toStrictEqual('patata');
-//             done();
-//         } catch (e) {
-//             done(e);
-//         }
-//     })
-// });
+test('test that /test return patata', (done) => {
+    testGet('test', (err,data) => {
+        try {
+            expect(data).toStrictEqual('patata');
+            done();
+        } catch (e) {
+            done(e);
+        }
+    })
+});
 
 test('test that POST /test return OK', (done) => {
     body = {}
-    callback('test', body, (err, data) => {
+    testPost('test', body, (err, data) => {
         try {
             expect(data).toStrictEqual('OK');
             done();
