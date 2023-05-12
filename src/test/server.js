@@ -34,8 +34,11 @@ app.post('/Login',
     res.sendStatus(200);
 });
 
-app.post("/RestorePassword", 
-body('matriculaUser').notEmpty().withMessage("Campo requerido").isString(),
+app.post("/RestorePassword",
+body('matriculaUser').notEmpty().withMessage("Campo requerido"),
+body('matriculaUser').if(body('matriculaUser').isLength({min: 1, max: 8})).isInt({gt: -1, allow_leading_zeroes: true}),
+body('matriculaUser').if(body('matriculaUser').isLength({min: 9, max: 9})).matches(/^[bcdmBCDM][0-9]{8,8}$/m),
+body('matriculaUser').not().matches(/^[bcdmBCDM][0-9]{9,}$/),
 function (req, res) {
     const valResult = validationResult(req);
     if (!valResult.isEmpty()) {
