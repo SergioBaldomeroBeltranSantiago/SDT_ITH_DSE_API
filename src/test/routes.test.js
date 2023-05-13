@@ -1,4 +1,4 @@
-const { testGet, testPost } = require('./helpers');
+const { testGet, testPost, testPut } = require('./helpers');
 
 test('test that /test return patata', (done) => {
     testGet('test', (err,data) => {
@@ -22,6 +22,8 @@ test('test that POST /test return OK', (done) => {
         }
     });
 });
+
+// Login tests
 
 test('test that /Login rejects non numeric IDs', (done) => {
     const body = {
@@ -150,6 +152,8 @@ test('test that /Login accepts 0 as id_number', (done) => {
         }
     });
 });
+
+// RestorePassword tests
 
 test('test that /RestorePassword accepts 8-chars matriculaUser', (done) => {
     // Arrange
@@ -474,6 +478,604 @@ test('test that /RestorePassword rejects 9-chars numerics matriculaUser', (done)
             // Assert
             expect(res.statusCode).toStrictEqual(400);
             expect(res.error.matriculaUser).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+// AdminInfo
+
+test('test that /AdminInfo accepts 8-chars loginID', (done) => {
+    // Arrange
+    const body = {
+        "loginID": "12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo accepts 7-chars loginID', (done) => {
+    // Arrange
+    const body = {
+        "loginID": "1234567"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo rejects 9-chars only numbers loginID', (done) => {
+    // Arrange
+    const body = {
+        "loginID": "123456789"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.loginID).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo accepts 9-chars with leading C letter loginID', (done) => {
+    // Arrange
+    const body = {
+        "loginID": "C12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo accepts 9-chars with leading m letter loginID', (done) => {
+    // Arrange
+    const body = {
+        "loginID": "m12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo accepts 9-chars with leading b c d or m letter loginID', (done) => {
+    // Arrange
+    let body = {
+        "loginID": "b12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+
+    // Arrange
+    body = {
+        "loginID": "c12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+    
+    // Arrange
+    body = {
+        "loginID": "d12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+
+    // Arrange
+    body = {
+        "loginID": "m12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo accepts 9-chars with leading B C D or M letter loginID', (done) => {
+    // Arrange
+    let body = {
+        "loginID": "B12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+
+    // Arrange
+    body = {
+        "loginID": "C12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+    
+    // Arrange
+    body = {
+        "loginID": "D12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+
+    // Arrange
+    body = {
+        "loginID": "M12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo rejects 9-chars with leading z letter loginID', (done) => {
+    // Arrange
+    const body = {
+        "loginID": "z12345678"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.loginID).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo rejects empty loginID', (done) => {
+    // Arrange
+    const body = {
+        "loginID": ""
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.loginID).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo rejects over 9-chars loginID', (done) => {
+    // Arrange
+    const body = {
+        "loginID": "1234567891"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.loginID).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo rejects over 9-chars with leading letter loginID', (done) => {
+    // Arrange
+    const body = {
+        "loginID": "M123456789"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.loginID).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo accepts 8-chars loginID with leading zeros', (done) => {
+    // Arrange
+    const body = {
+        "loginID": "00000009"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /AdminInfo rejects 9-chars numerics loginID', (done) => {
+    // Arrange
+    const body = {
+        "loginID": "123456789"
+    };
+    // Act
+    testPost('AdminInfo', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.loginID).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+// EditarUsuario/:id tests
+
+test('test that /EditarUsuario/:id accepts id and user informacion', (done) => {
+    // Arrange
+    const body = {
+        "matricula": "C12345678",
+        "nombre_Completo": "User Name",
+        "contraseña": "username1234",
+        "correo_e": "username1@example.com"
+    };
+    // Act
+    testPut('EditarUsuario/C12345678', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /EditarUsuario/:id rejects wrong id', (done) => {
+    // Arrange
+    const body = {
+        "matricula": "C12345",
+        "nombre_Completo": "User Name",
+        "contraseña": "username1234",
+        "correo_e": "username1@example.com"
+    };
+    // Act
+    testPut('EditarUsuario/C12345678', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.matricula).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /EditarUsuario/:id rejects wrong id 2', (done) => {
+    const body = {
+        "matricula": "H12345678",
+        "nombre_Completo": "User Name",
+        "contraseña": "username1234",
+        "correo_e": "username1@example.com"
+    };
+    // Act
+    testPut('EditarUsuario/C12345678', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.matricula).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /EditarUsuario/:id rejects id longer than 9 chars', (done) => {
+    const body = {
+        "matricula": "C123456789",
+        "nombre_Completo": "User Name",
+        "contraseña": "username1234",
+        "correo_e": "username1@example.com"
+    };
+    // Act
+    testPut('EditarUsuario/C12345678', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.matricula).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /EditarUsuario/:id rejects wrong nombre completo', (done) => {
+    const body = {
+        "matricula": "C123456789",
+        "nombre_Completo": "Us3r N@me",
+        "contraseña": "username1234",
+        "correo_e": "username1@example.com"
+    };
+    // Act
+    testPut('EditarUsuario/C12345678', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.nombre_Completo).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /EditarUsuario/:id rejects empty password', (done) => {
+    const body = {
+        "matricula": "C123456789",
+        "nombre_Completo": "User Name",
+        "contraseña": "",
+        "correo_e": "username1@example.com"
+    };
+    // Act
+    testPut('EditarUsuario/C12345678', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.contraseña).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /EditarUsuario/:id rejects empty email', (done) => {
+    const body = {
+        "matricula": "C123456789",
+        "nombre_Completo": "User Name",
+        "contraseña": "username1234",
+        "correo_e": ""
+    };
+    // Act
+    testPut('EditarUsuario/C12345678', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.correo_e).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /EditarUsuario/:id rejects wrong email', (done) => {
+    const body = {
+        "matricula": "C123456789",
+        "nombre_Completo": "User Name",
+        "contraseña": "username1234",
+        "correo_e": "ran@dom$n0me1@example.com"
+    };
+    // Act
+    testPut('EditarUsuario/C12345678', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.correo_e).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /EditarUsuario/:id rejects wrong email 2', (done) => {
+    const body = {
+        "matricula": "C123456789",
+        "nombre_Completo": "User Name",
+        "contraseña": "username1234",
+        "correo_e": "username1@"
+    };
+    // Act
+    testPut('EditarUsuario/C12345678', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.correo_e).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /EditarUsuario/:id rejects wrong email 3', (done) => {
+    const body = {
+        "matricula": "C123456789",
+        "nombre_Completo": "User Name",
+        "contraseña": "username1234",
+        "correo_e": "@example.com"
+    };
+    // Act
+    testPut('EditarUsuario/C12345678', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.correo_e).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /EditarUsuario/:id rejects wrong email 3', (done) => {
+    const body = {
+        "matricula": "C123456789",
+        "nombre_Completo": "User Name",
+        "contraseña": "username1234",
+        "correo_e": "user name1@example.com"
+    };
+    // Act
+    testPut('EditarUsuario/C12345678', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.correo_e).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+// SendSeguimientoEmail tests
+
+test('test that /SendSeguimientoEmail accepts correct data', (done) => {
+    const body = {
+        "nombre": "User Name",
+        "folio": "Nro 4",
+        "destinatario": "username1@example.com"
+    };
+    // Act
+    testPost('SendSeguimientoEmail', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+// UpdateUserInfo tests
+
+test('test that /SendSeguimientoEmail accepts correct data', (done) => {
+    const body = {
+        "nombre": "User Name",
+        "folio": "Nro 4",
+        "destinatario": "username1@example.com"
+    };
+    // Act
+    testPost('SendSeguimientoEmail', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
             done();
         } catch (e) {
             done(e);

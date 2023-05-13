@@ -82,7 +82,7 @@ function (req, res) {
 app.put("/EditarUsuario/:id", 
 param('id').notEmpty().withMessage("Campo requerido").matches(/^[bcdmBCDM][0-9]{8,8}$|^[0-9]{1,8}$/).withMessage("El campo no es una ID válida"),
 body('matricula').notEmpty().withMessage("Campo requerido").matches(/^[bcdmBCDM][0-9]{8,8}$|^[0-9]{1,8}$/).withMessage("El campo no es una matricula válida"),
-body('nombre_Completo').trim().notEmpty().isAlpha('es-ES').withMessage('Nombre no válido'),
+body('nombre_Completo').trim().notEmpty().isAlpha('es-ES', {ignore: ' '}).withMessage('Nombre no válido'),
 body('contraseña').notEmpty().withMessage('Contraseña requerida').isString().withMessage('Campo no válido'),
 body('correo_e').trim().notEmpty().normalizeEmail({gmail_lowercase: true, gmail_convert_googlemaildotcom: true, outlookdotcom_lowercase: true, icloud_lowercase: true}).isEmail().withMessage('Email no válido'),
 function (req, res) {
@@ -128,7 +128,7 @@ function (req, res) {
 app.post("/SendSeguimientoEmail",
 body('destinatario').trim().notEmpty().normalizeEmail({gmail_lowercase: true, gmail_convert_googlemaildotcom: true, outlookdotcom_lowercase: true, icloud_lowercase: true}).isEmail().withMessage('Email no válido'),
 body('folio').trim().notEmpty().withMessage('Campo requerido').isString(),
-body('nombre').trim().notEmpty().withMessage('Campo requerido').isString(),
+body('nombre').trim().notEmpty().withMessage('Campo requerido').isAlpha('es-ES', {ignore: ' '}).withMessage('Nombbre no valido'),
 function (req, res) {
     const valResult = validationResult(req);
     if (!valResult.isEmpty()) {
@@ -274,8 +274,8 @@ function (req, res) {
 });
 
 app.get("/ObtenerConteoEstadistico", 
-query('lowerRange').exists().isInt({min: 0}),
-query('upperRange').exists().isInt({min: 0}),
+query('lowerRange').exists().isDate({format: 'YYYY-MM-DD'}),
+query('upperRange').exists().isDate({format: 'YYYY-MM-DD'}),
 function (req, res) {
     const valResult = validationResult(req);
     if (!valResult.isEmpty()) {
