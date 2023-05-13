@@ -412,7 +412,7 @@ test('test that /RestorePassword rejects empty matriculaUser', (done) => {
 test('test that /RestorePassword rejects over 9-chars matriculaUser', (done) => {
     // Arrange
     const body = {
-        "matriculaUser": "12345678910"
+        "matriculaUser": "1234567891"
     };
     // Act
     testPost('RestorePassword', body, (err, res) => {
@@ -430,7 +430,7 @@ test('test that /RestorePassword rejects over 9-chars matriculaUser', (done) => 
 test('test that /RestorePassword rejects over 9-chars with leading letter matriculaUser', (done) => {
     // Arrange
     const body = {
-        "matriculaUser": "M12345678910"
+        "matriculaUser": "M123456789"
     };
     // Act
     testPost('RestorePassword', body, (err, res) => {
@@ -454,7 +454,6 @@ test('test that /RestorePassword accepts 8-chars matriculaUser with leading zero
     testPost('RestorePassword', body, (err, res) => {
         try {
             // Assert
-            console.log(res.error);
             expect(res.statusCode).toStrictEqual(200);
             expect(res.error).not.toBeDefined();
             done();
