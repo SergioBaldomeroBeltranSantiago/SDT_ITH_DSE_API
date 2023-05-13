@@ -2,12 +2,13 @@ var rp = require('request-promise');
 
 exports.testGet = (endpoint, cb) => {
     const url = 'http://localhost:9450/' + endpoint;
-        rp(url).then(
-            data => {
-                cb(null, data);
-            }).catch( err => {
-                cb(err);
-            })
+    const options = {
+        method: 'GET',
+        uri: url,
+        json: true, // Automatically stringifies the body to JSON,
+        resolveWithFullResponse: true
+    };
+    rp(options).then(data => {cb(null, data)}).catch( err => {cb(null, err)});
 }
 
 exports.testPost = (endpoint, body, cb) => {

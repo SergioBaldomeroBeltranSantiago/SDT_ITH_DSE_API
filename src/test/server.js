@@ -291,7 +291,7 @@ function (req, res) {
 
 app.post("/SubirUsuarios",
 body('matriculaUser').notEmpty().withMessage("Campo requerido").matches(/^[bcdmBCDM][0-9]{8,8}$|^[0-9]{1,8}$/).withMessage("El campo no es una matricula válida"),
-body('nombreUser').trim().notEmpty().isAlpha('es-ES').withMessage('Nombre no valido'),
+body('nombreUser').trim().notEmpty().isAlpha('es-ES', {ignore: ' '}).withMessage('Nombre no valido'),
 body('contraseñaUser').notEmpty().isString(),
 body('correoUser').trim().notEmpty().withMessage('email requerido').normalizeEmail({gmail_lowercase: true, gmail_convert_googlemaildotcom: true, outlookdotcom_lowercase: true, icloud_lowercase: true}).isEmail().withMessage('Email no válido'),
 body('carreraUser').trim().notEmpty().isString(),
@@ -311,7 +311,7 @@ function (req, res) {
 
 app.post("/AltaEstudiante",
 body('matriculaUser').notEmpty().withMessage("Campo requerido").matches(/^[bcdmBCDM][0-9]{8,8}$|^[0-9]{1,8}$/).withMessage("El campo no es una matricula válida"),
-body('nombreUser').trim().notEmpty().isAlpha('es-ES').withMessage('Nombre no valido'),
+body('nombreUser').trim().notEmpty().isAlpha('es-ES', {ignore: ' '}).withMessage('Nombre no valido'),
 body('contraseñaUser').notEmpty().isString(),
 body('correoUser').trim().notEmpty().withMessage('email requerido').normalizeEmail({gmail_lowercase: true, gmail_convert_googlemaildotcom: true, outlookdotcom_lowercase: true, icloud_lowercase: true}).isEmail().withMessage('Email no válido'),
 function (req, res) {
@@ -329,7 +329,7 @@ function (req, res) {
 
 app.post("/AltaEncargados",
 body('matriculaUser').notEmpty().withMessage("Campo requerido").matches(/^[bcdmBCDM][0-9]{8,8}$|^[0-9]{1,8}$/).withMessage("El campo no es una matricula válida"),
-body('nombreUser').trim().notEmpty().isAlpha('es-ES').withMessage('Nombre no valido'),
+body('nombreUser').trim().notEmpty().isAlpha('es-ES', {ignore: ' '}).withMessage('Nombre no valido'),
 body('contraseñaUser').notEmpty().isString(),
 body('correoUser').trim().notEmpty().withMessage('email requerido').normalizeEmail({gmail_lowercase: true, gmail_convert_googlemaildotcom: true, outlookdotcom_lowercase: true, icloud_lowercase: true}).isEmail().withMessage('Email no válido'),
 function (req, res) {
@@ -346,7 +346,7 @@ function (req, res) {
 });
 
 app.post("/EditEstudiante",
-body('nombreUser').trim().notEmpty().isAlpha('es-ES').withMessage('Nombre no valido'),
+body('nombreUser').trim().notEmpty().isAlpha('es-ES', {ignore: ' '}).withMessage('Nombre no valido'),
 body('correoUser').trim().notEmpty().withMessage('email requerido').normalizeEmail({gmail_lowercase: true, gmail_convert_googlemaildotcom: true, outlookdotcom_lowercase: true, icloud_lowercase: true}).isEmail().withMessage('Email no válido'),
 body('matriculaUser').notEmpty().withMessage("Campo requerido").matches(/^[bcdmBCDM][0-9]{8,8}$|^[0-9]{1,8}$/).withMessage("El campo no es una matricula válida"),
 body('carreraUser').trim().notEmpty().isString(),
@@ -365,7 +365,7 @@ function (req, res) {
 });
 
 app.post("/EditEncargados", 
-body('nombreUser').trim().notEmpty().withMessage('Nombre requerido').isAlpha('es-ES').withMessage('Nombre debe contener solo letras'),
+body('nombreUser').trim().notEmpty().withMessage('Nombre requerido').isAlpha('es-ES', {ignore: ' '}).withMessage('Nombre debe contener solo letras'),
 body('correoUser').trim().notEmpty().normalizeEmail({gmail_lowercase: true, gmail_convert_googlemaildotcom: true, outlookdotcom_lowercase: true, icloud_lowercase: true}).isEmail().withMessage('Email no válido'),
 body('matriculaUser').notEmpty().withMessage("Campo requerido").matches(/^[bcdmBCDM][0-9]{8,8}$|^[0-9]{1,8}$/).withMessage("El campo no es una ID válida"),
 function (req, res) {

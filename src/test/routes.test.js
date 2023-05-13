@@ -3,7 +3,7 @@ const { testGet, testPost, testPut } = require('./helpers');
 test('test that /test return patata', (done) => {
     testGet('test', (err,data) => {
         try {
-            expect(data).toStrictEqual('patata');
+            expect(data.body).toStrictEqual('patata');
             done();
         } catch (e) {
             done(e);
@@ -1082,3 +1082,159 @@ test('test that /SendSeguimientoEmail accepts correct data', (done) => {
         }
     });
 });
+
+// GetConteoSolicitudes tests
+
+test('test that /GetConteoSolicitudes accepts numeric status', (done) => {
+    const body = {
+        "estatus": "1345"
+    };
+    // Act
+    testPost('GetConteoSolicitudes', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /GetConteoSolicitudes rejects non-numeric status', (done) => {
+    const body = {
+        "estatus": "asd"
+    };
+    // Act
+    testPost('GetConteoSolicitudes', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.estatus).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /GetConteoSolicitudes rejects numeric with symbols status', (done) => {
+    const body = {
+        "estatus": "124.457"
+    };
+    // Act
+    testPost('GetConteoSolicitudes', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.estatus).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+test('test that /GetConteoSolicitudes rejects numeric with symbols status 2', (done) => {
+    const body = {
+        "estatus": "124-457"
+    };
+    // Act
+    testPost('GetConteoSolicitudes', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.estatus).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+})
+
+test('test that /GetConteoSolicitudes rejects numeric with symbols status 3', (done) => {
+    const body = {
+        "estatus": "1244,57"
+    };
+    // Act
+    testPost('GetConteoSolicitudes', body, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.estatus).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+})
+
+// ObtenerConteoEstadistico tests
+
+test('test that /ObtenerConteoEstadistico accepts well formatted date ', (done) => {
+    const lr = 'lowerRange=2023-06-14';
+    const ur = 'upperRange=2023-06-20';
+    // Act
+    testGet(`ObtenerConteoEstadistico?${lr}&${ur}`, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(200);
+            expect(res.error).not.toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+})
+
+test('test that /ObtenerConteoEstadistico rejects bad formatted date 2', (done) => {
+    const lr = 'lowerRange=202312-06-14';
+    const ur = 'upperRange=2023-012-20';
+    // Act
+    testGet(`ObtenerConteoEstadistico?${lr}&${ur}`, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.lowerRange).toBeDefined();
+            expect(res.error.upperRange).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+})
+
+test('test that /ObtenerConteoEstadistico rejects bad formatted date 3', (done) => {
+    const lr = 'lowerRange=a-s-d';
+    const ur = 'upperRange=23-01-40';
+    // Act
+    testGet(`ObtenerConteoEstadistico?${lr}&${ur}`, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.lowerRange).toBeDefined();
+            expect(res.error.upperRange).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+})
+
+test('test that /ObtenerConteoEstadistico rejects bad formatted date 4', (done) => {
+    const lr = 'lowerRange=asd';
+    const ur = 'upperRange=2023-JA-13';
+    // Act
+    testGet(`ObtenerConteoEstadistico?${lr}&${ur}`, (err, res) => {
+        try {
+            // Assert
+            expect(res.statusCode).toStrictEqual(400);
+            expect(res.error.lowerRange).toBeDefined();
+            expect(res.error.upperRange).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+})
