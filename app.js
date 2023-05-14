@@ -999,7 +999,7 @@ app.listen(PORT, function () {
     .authenticate()
     .then(() => {
       sequelize
-        .sync(/*{ alter: true }*/)
+        .sync({ alter: true })
         .then(() => console.log("Conexion exitosa"));
     })
     .catch((error) => console.log("Error de conexion: ", error));
