@@ -46,4 +46,19 @@ router.post("/ObtenerDatosTramite", function (req, res) {
     });
 });
 
+//Envia toda la información y requisitos pertenecientes a un trámite en particular, para su posterior edición
+router.post("/ActualizarMetadata", function (req, res) {
+  Tramite_M.update(
+    { texto: req.body.contenido },
+    { where: { id_Tramite_M: req.body.id_metadata } }
+    )
+    .then((resultado) => {
+      res.send({Code:1});
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: 0 });
+    });
+});
+
 module.exports = router;
