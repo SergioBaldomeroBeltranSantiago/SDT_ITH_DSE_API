@@ -191,7 +191,7 @@ app.get("/ObtenerListaJSON", function (req, res) {
 
 //Modificar JSON existente
 //Se va a eliminar
-app.post("/ModificarJSONEliminar", function (req, res) {
+app.post("/ModificarCorreo", function (req, res) {
   console.log(req.body);
 
   fs.readFile(
@@ -259,7 +259,7 @@ app.post("/ModificarJSON", upload, function (req, res) {
 
   //Ahora que ya eliminamos los archivos viejos, solamente sobreescribimos los valores del JSON con los nuevos valores
   const jsonModificar = JSON.parse(req.body.data).titulo;
-  console.log(JSON.parse(req.body.data));
+  //console.log(JSON.parse(req.body.data));
   fs.readdir(__dirname + "/JSON", (error, archivos) => {
     if (error) {
       console.log(error);
@@ -278,13 +278,14 @@ app.post("/ModificarJSON", upload, function (req, res) {
 
           const jsonInfo = JSON.parse(informacion);
 
-          console.log(jsonInfo);
-          console.log(jsonModificar);
+          //console.log(jsonInfo.titulo);
+          //console.log(jsonModificar);
+          //console.log(JSON.parse(req.body.data).cuerpo)
 
           if (jsonInfo.titulo === jsonModificar) {
-            jsonInfo.Asunto = jsonModificar.Asunto;
-            jsonInfo.Destinatario = jsonModificar.Destinatario;
-            jsonInfo.Cuerpo = jsonModificar.Cuerpo;
+            jsonInfo.asunto = JSON.parse(req.body.data).asunto;
+            jsonInfo.destinatario = JSON.parse(req.body.data).destinatario;
+            jsonInfo.cuerpo = JSON.parse(req.body.data).cuerpo;
             jsonInfo.adjuntos = listaArchivosAdjuntos;
 
             fs.writeFile(
