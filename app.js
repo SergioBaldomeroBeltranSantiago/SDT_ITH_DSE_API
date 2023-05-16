@@ -59,13 +59,10 @@ const fileStatistics = reader.readFile(
 );
 
 //Definimos el puerto a utilizar
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
-//CORS
+//CROSS-ORIGIN-RESOURCE-SHARING
 app.use(cors());
-
-//Documentos
-app.use(express.static(__dirname));
 
 //Middleware
 app.use(express.json({ limit: "10mb" }));
@@ -80,23 +77,92 @@ var transporter = nodemailer.createTransport({
   },
 });
 
-//Multer usage
+//Ruta de la raiz del documento
+app.use(express.static(__dirname));
+
+//Determinar donde se guardaran los archivos y como se llamaran al subirse
 var storage = multer.diskStorage({
   destination: (req, file, callBack) => {
-    callBack(null, __dirname + "/Documentos");
+    //Vamos a determinar si los archivos van a la carpeta de solicitudes o correos
+    var carpeta = req.body.isSolicitud ? "Solicitudes" : "Correos";
+    //Aquí determinamos si la subcarpeta es la matricula del estudiante o la ID de la plantilla del correo.
+    var subCarpeta = req.body.subCarpeta;
+    //Checamos que el directorio dinamico exista, si no existe, se crea
+    var directorio = __dirname + "/Documentos/" + carpeta + "/" + subCarpeta;
+    if (!fs.existsSync(directorio)) {
+      fs.mkdirSync(directorio, { recursive: true });
+    }
+    callBack(null, directorio);
   },
   filename: (req, file, callBack) => {
-    callBack(null, Date.now() + "_" + file.originalname);
+    var ahora = new Date();
+    //Generamos la fecha actual, en formato ISO 8601 YYYY-MM-DD-HH-MM-SS
+    var fecha_actual =
+      ahora.getUTCFullYear() +
+      "-" +
+      (ahora.getUTCMonth() + 1) +
+      "-" +
+      ahora.getUTCDate() +
+      "-" +
+      ahora.getUTCHours() +
+      "-" +
+      ahora.getUTCMinutes() +
+      "-" +
+      ahora.getUTCSeconds();
+    //Archivo cuyo nombre empieza con la fecha, se le añade un número aleatorio del 0 al 999, y al final, el nombre original del archivo, todo separado por _
+    var nombre_archivo =
+      fecha_actual +
+      "_" +
+      Math.floor(Math.random() * 1000) +
+      "_" +
+      file.originalname;
+    callBack(null, nombre_archivo);
   },
 });
 
-//Multer almacenar
-var upload = multer({
-  storage: storage,
-});
+//Middleware para subir archivos al servidor
+const upload = multer({ storage }).any();
 
 app.get("/", function (req, res) {
   res.send("Patata");
+});
+
+//Obtener archivos de los JSON existentes
+app.get("/ObtenerDocumentoJSON", function (req, res) {
+  console.log(req.query);
+  console.log(req.body);
+  const ruta = __dirname + "/Documentos/Solicitudes/" + req.query.subCarpeta;
+  const archivo_buscar = req.query.nombreArchivo;
+
+  fs.readdir(ruta, (error, archivos) => {
+    if (error) {
+      console.log(error);
+      res.send({ Code: -1 });
+      return;
+    }
+
+    archivos.forEach((archivo) => {
+      if (archivo.split("_")[2] === archivo_buscar) {
+        const archivo_descarga = ruta + "/" + archivo;
+
+        fs.access(archivo_descarga, fs.constants.F_OK, (error) => {
+          if (error) {
+            console.log(error);
+            res.send({ Code: -1 });
+            return;
+          }
+
+          res.download(archivo_descarga, (error) => {
+            if (error) {
+              console.log(error);
+              res.send({ Code: -1 });
+              return;
+            }
+          });
+        });
+      }
+    });
+  });
 });
 
 //Enviar lista de JSON existentes
@@ -124,9 +190,9 @@ app.get("/ObtenerListaJSON", function (req, res) {
 });
 
 //Modificar JSON existente
-app.post("/ModificarJSON", function (req, res) {
-
-  console.log(req.body)
+//Se va a eliminar
+app.post("/ModificarJSONEliminar", function (req, res) {
+  console.log(req.body);
 
   fs.readFile(
     "JSON/" + req.body.nombreArchivo,
@@ -156,6 +222,87 @@ app.post("/ModificarJSON", function (req, res) {
       );
     }
   );
+});
+
+app.post("/ModificarJSON", upload, function (req, res) {
+  var ahora = new Date();
+  //Generamos la fecha actual, en formato ISO 8601 YYYY-MM-DD-HH-MM-SS
+  var fecha_actual =
+    ahora.getUTCFullYear() +
+    "-" +
+    (ahora.getUTCMonth() + 1) +
+    "-" +
+    ahora.getUTCDate() +
+    "-" +
+    ahora.getUTCHours() +
+    "-" +
+    ahora.getUTCMinutes() +
+    "-" +
+    ahora.getUTCSeconds();
+
+  fecha_actual = fecha_actual.trim();
+  var listaArchivosAdjuntos = "";
+  //Checamos la carpeta en busca de archivos viejos, para eliminarlos
+  var carpeta = __dirname + "/Documentos/Solicitudes/" + req.body.subCarpeta;
+  if (fs.existsSync(carpeta)) {
+    fs.readdirSync(carpeta).forEach((archivo) => {
+      var fecha_archivo = archivo.split("_")[0].trim();
+      if (fecha_actual !== fecha_archivo) {
+        fs.unlinkSync(carpeta + "/" + archivo);
+      } else {
+        listaArchivosAdjuntos += archivo.split("_")[2].trim() + ";";
+      }
+    });
+  }
+
+  listaArchivosAdjuntos = listaArchivosAdjuntos.slice(0, -1);
+
+  //Ahora que ya eliminamos los archivos viejos, solamente sobreescribimos los valores del JSON con los nuevos valores
+  const jsonModificar = JSON.parse(req.body.data).titulo;
+  console.log(JSON.parse(req.body.data));
+  fs.readdir(__dirname + "/JSON", (error, archivos) => {
+    if (error) {
+      console.log(error);
+      res.send({ Code: -1 });
+    }
+
+    archivos.forEach((archivo) => {
+      fs.readFile(
+        __dirname + "/JSON/" + archivo,
+        "utf8",
+        (error, informacion) => {
+          if (error) {
+            console.log(error);
+            res.send({ Code: -1 });
+          }
+
+          const jsonInfo = JSON.parse(informacion);
+
+          console.log(jsonInfo);
+          console.log(jsonModificar);
+
+          if (jsonInfo.titulo === jsonModificar) {
+            jsonInfo.Asunto = jsonModificar.Asunto;
+            jsonInfo.Destinatario = jsonModificar.Destinatario;
+            jsonInfo.Cuerpo = jsonModificar.Cuerpo;
+            jsonInfo.adjuntos = listaArchivosAdjuntos;
+
+            fs.writeFile(
+              __dirname + "/JSON/" + archivo,
+              JSON.stringify(jsonInfo),
+              (error) => {
+                if (error) {
+                  console.log(error);
+                  res.send({ Code: -1 });
+                }
+                res.send({ Code: 1 });
+              }
+            );
+          }
+        }
+      );
+    });
+  });
 });
 
 //Se va a transferir a GestorUsuarios.js
@@ -582,28 +729,31 @@ app.post("/updateApplication", function (req, res) {
 });
 
 //Subir documentos al sistema
-app.post("/UploadDocuments", upload.any("pdf"), function (req, res) {
-  if (!req.files) {
-    console.log("No files to upload");
-  } else {
-    let successUpload = true;
-    for (var indice = 0; indice < req.files.length; indice++) {
-      Documento.create({
-        nombre_Documento: req.files[indice].originalname,
-        ruta_Documento: req.files[indice].path,
-        solicitud_Vinculada: req.body.text,
-      })
-        .then(() => {
-          successUpload = true;
+app.post(
+  "/UploadDocuments",
+  /*upload.any("pdf"),*/ function (req, res) {
+    if (!req.files) {
+      console.log("No files to upload");
+    } else {
+      let successUpload = true;
+      for (var indice = 0; indice < req.files.length; indice++) {
+        Documento.create({
+          nombre_Documento: req.files[indice].originalname,
+          ruta_Documento: req.files[indice].path,
+          solicitud_Vinculada: req.body.text,
         })
-        .catch((error) => {
-          console.log(error);
-          successUpload = false;
-        });
+          .then(() => {
+            successUpload = true;
+          })
+          .catch((error) => {
+            console.log(error);
+            successUpload = false;
+          });
+      }
+      res.send({ successUpload });
     }
-    res.send({ successUpload });
   }
-});
+);
 
 //Obtener documentos de la solicitud
 app.post("/RetrieveDocuments", function (req, res) {
