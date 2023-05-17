@@ -14,7 +14,7 @@ Solicitud.init(
       autoIncrement: true,
     },
     folio_Solicitud: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     fecha_Solicitud: {

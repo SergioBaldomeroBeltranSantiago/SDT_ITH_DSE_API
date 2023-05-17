@@ -1,21 +1,38 @@
-//Import
+//Dependencias
+//API
 const express = require("express");
 const app = express();
+//Base de datis
 const sequelize = require("./Database/db");
-const cors = require("cors");
-const nodemailer = require("nodemailer");
-const moment = require("moment");
 const { Op } = require("sequelize");
+//CROSS-ORIGIN-RESOURCE-SHARING
+const cors = require("cors");
+//Correos
+const nodemailer = require("nodemailer");
+//Fecha
+const moment = require("moment");
+//Archivos
 const multer = require("multer");
 const reader = require("xlsx");
+const fs = require("fs");
+const path = require("path");
+//Seguridad
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
+//Enrutamiento
+const GestorTramites = require("./Routes/GestorTramites");
+const GestorUsuarios = require("./Routes/GestorUsuarios");
+
+app.use("/GestionTramites", GestorTramites);
+app.use("/GestionUsuarios", GestorUsuarios);
+
 //Patron GOF - Singleton
+//Modelos
 const Usuario = require("./Database/Models/Usuario");
 const Estudiante = require("./Database/Models/Estudiante");
 const Tramite = require("./Database/Models/Tramite");
-const Imagen = require("./Database/Models/Imagen");
+const Descripcion_Menu = require("./Database/Models/Descripcion_Menu");
 const Tramite_M = require("./Database/Models/Tramite_M");
 const Solicitud = require("./Database/Models/Solicitud");
 const Documento = require("./Database/Models/Documento");
@@ -42,13 +59,10 @@ const fileStatistics = reader.readFile(
 );
 
 //Definimos el puerto a utilizar
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
-//CORS
+//CROSS-ORIGIN-RESOURCE-SHARING
 app.use(cors());
-
-//Documentos
-app.use(express.static(__dirname));
 
 //Middleware
 app.use(express.json({ limit: "10mb" }));
@@ -63,66 +77,240 @@ var transporter = nodemailer.createTransport({
   },
 });
 
-//Multer usage
+//Ruta de la raiz del documento
+app.use(express.static(__dirname));
+
+//Determinar donde se guardaran los archivos y como se llamaran al subirse
 var storage = multer.diskStorage({
   destination: (req, file, callBack) => {
-    callBack(null, __dirname + "/Documentos");
+    //Vamos a determinar si los archivos van a la carpeta de solicitudes o correos
+    var carpeta = req.body.isSolicitud ? "Solicitudes" : "Correos";
+    //Aquí determinamos si la subcarpeta es la matricula del estudiante o la ID de la plantilla del correo.
+    var subCarpeta = req.body.subCarpeta;
+    //Checamos que el directorio dinamico exista, si no existe, se crea
+    var directorio = __dirname + "/Documentos/" + carpeta + "/" + subCarpeta;
+    if (!fs.existsSync(directorio)) {
+      fs.mkdirSync(directorio, { recursive: true });
+    }
+    callBack(null, directorio);
   },
   filename: (req, file, callBack) => {
-    callBack(null, Date.now() + "_" + file.originalname);
+    var ahora = new Date();
+    //Generamos la fecha actual, en formato ISO 8601 YYYY-MM-DD-HH-MM-SS
+    var fecha_actual =
+      ahora.getUTCFullYear() +
+      "-" +
+      (ahora.getUTCMonth() + 1) +
+      "-" +
+      ahora.getUTCDate() +
+      "-" +
+      ahora.getUTCHours() +
+      "-" +
+      ahora.getUTCMinutes() +
+      "-" +
+      ahora.getUTCSeconds();
+    //Archivo cuyo nombre empieza con la fecha, se le añade un número aleatorio del 0 al 999, y al final, el nombre original del archivo, todo separado por _
+    var nombre_archivo =
+      fecha_actual +
+      "_" +
+      Math.floor(Math.random() * 1000) +
+      "_" +
+      file.originalname;
+    callBack(null, nombre_archivo);
   },
 });
 
-//Multer almacenar
-var upload = multer({
-  storage: storage,
-});
+//Middleware para subir archivos al servidor
+const upload = multer({ storage }).any();
 
-//Rutas
 app.get("/", function (req, res) {
   res.send("Patata");
 });
 
-//Login
-app.post("/Login", function (req, res) {
-  //Buscar si existe el registro de usuario
+//Obtener archivos de los JSON existentes
+app.get("/ObtenerDocumentoJSON", function (req, res) {
+  console.log(req.query);
+  console.log(req.body);
+  const ruta = __dirname + "/Documentos/Solicitudes/" + req.query.subCarpeta;
+  const archivo_buscar = req.query.nombreArchivo;
 
-  Usuario.findByPk(req.body.id_number)
-    .then((result) => {
-      //Si si existe, checar si coincide usuario y contraseña
-      if (result != null) {
-        Usuario.count({
-          where: {
-            matricula: req.body.id_number,
-            contraseña: req.body.password,
-          },
-        })
-          .then((consult) => {
-            if (consult > 0) {
-              //Si si coinciden, se envia codigo de confirmación
-              res.send({ Code: 1 });
-            } else {
-              //Si no coinciden, se envia codigo de contraseña incorrecta
-              res.send({ Code: -1 });
-            }
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-      } else {
-        //Si no existe, se envia codigo de usuario no existente
-        res.send({ Code: 0 });
-      }
-    })
-    .catch((error) => {
+  fs.readdir(ruta, (error, archivos) => {
+    if (error) {
       console.log(error);
+      res.send({ Code: -1 });
+      return;
+    }
+
+    archivos.forEach((archivo) => {
+      if (archivo.split("_")[2] === archivo_buscar) {
+        const archivo_descarga = ruta + "/" + archivo;
+
+        fs.access(archivo_descarga, fs.constants.F_OK, (error) => {
+          if (error) {
+            console.log(error);
+            res.send({ Code: -1 });
+            return;
+          }
+
+          res.download(archivo_descarga, (error) => {
+            if (error) {
+              console.log(error);
+              res.send({ Code: -1 });
+              return;
+            }
+          });
+        });
+      }
     });
+  });
 });
 
+//Enviar lista de JSON existentes
+app.get("/ObtenerListaJSON", function (req, res) {
+  fs.readdir("JSON", (error, archivos) => {
+    if (error) {
+      console.log(error);
+      res.send({ Code: 0 });
+    }
+
+    const TitulosJSON = [];
+
+    archivos.forEach((archivo) => {
+      const Info = fs.readFileSync(path.join("JSON", archivo));
+      const JInfo = JSON.parse(Info);
+      TitulosJSON.push(JInfo);
+    });
+
+    if (TitulosJSON.length > 0) {
+      res.send(TitulosJSON);
+    } else {
+      res.send({ Code: 0 });
+    }
+  });
+});
+
+//Modificar JSON existente
+//Se va a eliminar
+app.post("/ModificarCorreo", function (req, res) {
+  console.log(req.body);
+
+  fs.readFile(
+    "JSON/" + req.body.nombreArchivo,
+    "utf8",
+    (error, informacion) => {
+      if (error) {
+        console.log(error);
+        res.send({ Code: 0 });
+      }
+
+      const Json = JSON.parse(informacion);
+      Json.cuerpo = req.body.Cuerpo;
+      Json.destinatario = req.body.Destinatario;
+      Json.asunto = req.body.Asunto;
+      Json.adjuntos = req.body.Adjuntos;
+
+      fs.writeFile(
+        "JSON/" + req.body.nombreArchivo,
+        JSON.stringify(Json),
+        (error) => {
+          if (error) {
+            console.log(error);
+            res.send({ Code: 0 });
+          }
+          res.send({ Code: 1 });
+        }
+      );
+    }
+  );
+});
+
+app.post("/ModificarJSON", upload, function (req, res) {
+  var ahora = new Date();
+  //Generamos la fecha actual, en formato ISO 8601 YYYY-MM-DD-HH-MM-SS
+  var fecha_actual =
+    ahora.getUTCFullYear() +
+    "-" +
+    (ahora.getUTCMonth() + 1) +
+    "-" +
+    ahora.getUTCDate() +
+    "-" +
+    ahora.getUTCHours() +
+    "-" +
+    ahora.getUTCMinutes() +
+    "-" +
+    ahora.getUTCSeconds();
+
+  fecha_actual = fecha_actual.trim();
+  var listaArchivosAdjuntos = "";
+  //Checamos la carpeta en busca de archivos viejos, para eliminarlos
+  var carpeta = __dirname + "/Documentos/Solicitudes/" + req.body.subCarpeta;
+  if (fs.existsSync(carpeta)) {
+    fs.readdirSync(carpeta).forEach((archivo) => {
+      var fecha_archivo = archivo.split("_")[0].trim();
+      if (fecha_actual !== fecha_archivo) {
+        fs.unlinkSync(carpeta + "/" + archivo);
+      } else {
+        listaArchivosAdjuntos += archivo.split("_")[2].trim() + ";";
+      }
+    });
+  }
+
+  listaArchivosAdjuntos = listaArchivosAdjuntos.slice(0, -1);
+
+  //Ahora que ya eliminamos los archivos viejos, solamente sobreescribimos los valores del JSON con los nuevos valores
+  const jsonModificar = JSON.parse(req.body.data).titulo;
+  //console.log(JSON.parse(req.body.data));
+  fs.readdir(__dirname + "/JSON", (error, archivos) => {
+    if (error) {
+      console.log(error);
+      res.send({ Code: -1 });
+    }
+
+    archivos.forEach((archivo) => {
+      fs.readFile(
+        __dirname + "/JSON/" + archivo,
+        "utf8",
+        (error, informacion) => {
+          if (error) {
+            console.log(error);
+            res.send({ Code: -1 });
+          }
+
+          const jsonInfo = JSON.parse(informacion);
+
+          //console.log(jsonInfo.titulo);
+          //console.log(jsonModificar);
+          //console.log(JSON.parse(req.body.data).cuerpo)
+
+          if (jsonInfo.titulo === jsonModificar) {
+            jsonInfo.asunto = JSON.parse(req.body.data).asunto;
+            jsonInfo.destinatario = JSON.parse(req.body.data).destinatario;
+            jsonInfo.cuerpo = JSON.parse(req.body.data).cuerpo;
+            jsonInfo.adjuntos = listaArchivosAdjuntos;
+
+            fs.writeFile(
+              __dirname + "/JSON/" + archivo,
+              JSON.stringify(jsonInfo),
+              (error) => {
+                if (error) {
+                  console.log(error);
+                  res.send({ Code: -1 });
+                }
+                res.send({ Code: 1 });
+              }
+            );
+          }
+        }
+      );
+    });
+  });
+});
+
+//Se va a transferir a GestorUsuarios.js
 // Restablecer contraseñas
 app.post("/RestorePassword", function (req, res) {
   // Obtener el correo electrónico del usuario desde la solicitud
-  const matricula = req.body.matriculaUser
+  const matricula = req.body.matriculaUser;
   //const correo = req.body.correoUser;
 
   Usuario.findOne({ where: { matricula: matricula } })
@@ -133,7 +321,8 @@ app.post("/RestorePassword", function (req, res) {
 
         // Actualizar la contraseña de usuario en la base de datos
         usuario.contraseña = newPassword;
-        usuario.save()
+        usuario
+          .save()
           .then(() => {
             // Enviar un correo electrónico al usuario con la nueva contraseña temporal
             //sendEmail(correo, newPassword);
@@ -158,22 +347,23 @@ app.post("/RestorePassword", function (req, res) {
       // Enviar una respuesta de error al cliente
       res.send({ Code: -1 });
     });
-})
+});
 
+//Se va a borrar
 // Función para generar una contraseña temporal
 function generateTempPassword() {
   const randomBytes = crypto.randomBytes(4).toString("hex");
   return bcrypt.hashSync(randomBytes, 10);
 }
 
-// Función para enviar un correo electrónico 
+// Función para enviar un correo electrónico
 function sendEmail(correo, newPassword) {
   const mailOptions = {
     from: process.env.MAIL_USER,
     to: correo,
     subject: "Restablecimiento de Contraseña",
     text: `Tu nueva contraseña temporal es: ${newPassword}. Por favor, cambia tu contraseña después de iniciar sesión.`,
-  }
+  };
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
@@ -184,6 +374,7 @@ function sendEmail(correo, newPassword) {
   });
 }
 
+//Se va a transferir a GestorUsuarios.js
 //Conseguir datos del usuario activo en sesión, si es admin
 app.post("/AdminInfo", function (req, res) {
   Usuario.findByPk(req.body.loginID)
@@ -197,6 +388,7 @@ app.post("/AdminInfo", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Conseguir datos del usuario activo en sesión, si es estudiante
 app.post("/StudentInfo", function (req, res) {
   Usuario.findByPk(req.body.loginID, {
@@ -215,6 +407,7 @@ app.post("/StudentInfo", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 // Editar usuario
 app.put("/EditarUsuario/:id", function (req, res) {
   const userID = req.params.id;
@@ -225,7 +418,8 @@ app.put("/EditarUsuario/:id", function (req, res) {
     .then((usuario) => {
       if (usuario) {
         // Actualizar los datos del usuario con los nuevos datos
-        usuario.update(updatedData)
+        usuario
+          .update(updatedData)
           .then((updatedUsuario) => {
             // Enviar la respuesta con el usuario actualizado
             res.send(updatedUsuario);
@@ -299,10 +493,10 @@ app.post("/RequestTransactionList", function (req, res) {
 //Conseguir la lista de requisistos del tramite
 app.post("/RequisitosTramite", function (req, res) {
   Tramite_M.findAndCountAll({
-    attributes: ["id_Tramite_M", "texto", "tipo", "orden"]
+    attributes: ["id_Tramite_M", "texto", "tipo", "orden"],
   })
     .then((result) => {
-      res.send({result, Code: 1});
+      res.send({ result, Code: 1 });
     })
     .catch((error) => {
       console.log(error);
@@ -357,9 +551,9 @@ app.post("/SendSeguimientoEmail", function (req, res) {
   var mailOptions = {
     from: process.env.MAIL_USER,
     to: req.body.destinatario,
-    subject: "Solicitud de seguimiento del seguro con folio: " + req.body.folio,
+    subject: "Solicitud de seguimiento del seguro para " + req.body.nombre,
     text:
-      'Buen dia, se le solicita una actualizacion sobre la solicitud con folio "' +
+      'Buen dia, se le solicita una actualizacion sobre la solicitud con la guia de seguimiento "' +
       req.body.folio +
       '", a nombre de "' +
       req.body.nombre +
@@ -459,6 +653,7 @@ app.post("/NewUserApplication", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Cambiar contraseña y/o correo electronico
 app.post("/UpdateUserInfo", function (req, res) {
   Usuario.count({
@@ -512,8 +707,7 @@ app.post("/updateApplication", function (req, res) {
           estatus_Actual: req.body.nuevoEstatus,
           fecha_Actualizacion: moment(new Date(), "YYYY-MM-DD"),
           folio_Solicitud: req.body.folio,
-          retroalimentacion_Actual:
-            estatusLexico[req.body.nuevoEstatus] + ". " + req.body.retroNueva,
+          retroalimentacion_Actual: req.body.retroNueva,
         },
         {
           where: {
@@ -536,28 +730,31 @@ app.post("/updateApplication", function (req, res) {
 });
 
 //Subir documentos al sistema
-app.post("/UploadDocuments", upload.any("pdf"), function (req, res) {
-  if (!req.files) {
-    console.log("No files to upload");
-  } else {
-    let successUpload = true;
-    for (var indice = 0; indice < req.files.length; indice++) {
-      Documento.create({
-        nombre_Documento: req.files[indice].originalname,
-        ruta_Documento: req.files[indice].path,
-        solicitud_Vinculada: req.body.text,
-      })
-        .then(() => {
-          successUpload = true;
+app.post(
+  "/UploadDocuments",
+  /*upload.any("pdf"),*/ function (req, res) {
+    if (!req.files) {
+      console.log("No files to upload");
+    } else {
+      let successUpload = true;
+      for (var indice = 0; indice < req.files.length; indice++) {
+        Documento.create({
+          nombre_Documento: req.files[indice].originalname,
+          ruta_Documento: req.files[indice].path,
+          solicitud_Vinculada: req.body.text,
         })
-        .catch((error) => {
-          console.log(error);
-          successUpload = false;
-        });
+          .then(() => {
+            successUpload = true;
+          })
+          .catch((error) => {
+            console.log(error);
+            successUpload = false;
+          });
+      }
+      res.send({ successUpload });
     }
-    res.send({ successUpload });
   }
-});
+);
 
 //Obtener documentos de la solicitud
 app.post("/RetrieveDocuments", function (req, res) {
@@ -679,11 +876,11 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
                     fileStatistics,
                     ws,
                     fileStatistics.SheetNames.length +
-                    1 +
-                    " - " +
-                    req.query.lowerRange +
-                    " - " +
-                    req.query.upperRange
+                      1 +
+                      " - " +
+                      req.query.lowerRange +
+                      " - " +
+                      req.query.upperRange
                   );
                   reader.writeFile(
                     fileStatistics,
@@ -715,6 +912,7 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 app.post("/SubirUsuarios", function (req, res) {
   Usuario.findOrCreate({
     where: { matricula: req.body.matriculaUser },
@@ -748,19 +946,20 @@ app.post("/SubirUsuarios", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Alta de estudiantes
 app.post("/AltaEstudiante", function (req, res) {
   Usuario.create({
-      matricula: req.body.matriculaUser,
-      nombre_Completo: req.body.nombreUser,
-      contraseña: req.body.contraseñaUser,
-      correo_e: req.body.correoUser
+    matricula: req.body.matriculaUser,
+    nombre_Completo: req.body.nombreUser,
+    contraseña: req.body.contraseñaUser,
+    correo_e: req.body.correoUser,
   })
     .then((result) => {
       Estudiante.create({
-          matricula_Estudiante: req.body.matriculaUser,
-          carrera: req.body.carreraUser,
-          semestre: req.body.semestreUser
+        matricula_Estudiante: req.body.matriculaUser,
+        carrera: req.body.carreraUser,
+        semestre: req.body.semestreUser,
       })
         .then((result) => {
           res.send({ Code: 1 });
@@ -776,47 +975,54 @@ app.post("/AltaEstudiante", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Alta de encargados
 app.post("/AltaEncargados", function (req, res) {
   Usuario.create({
-      matricula: req.body.matriculaUser,
-      nombre_Completo: req.body.nombreUser,
-      contraseña: req.body.contraseñaUser,
-      correo_e: req.body.correoUser
+    matricula: req.body.matriculaUser,
+    nombre_Completo: req.body.nombreUser,
+    contraseña: req.body.contraseñaUser,
+    correo_e: req.body.correoUser,
   })
-  .then((result) => {
-    res.send({ Code: 1 });
-  })
-  .catch((error) => {
-    console.log(error);
-    res.send({ Code: -1 });
-  })
-  .catch((error) => {
+    .then((result) => {
+      res.send({ Code: 1 });
+    })
+    .catch((error) => {
       console.log(error);
       res.send({ Code: -1 });
-  });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Edicion de estudiantes
 app.post("/EditEstudiante", function (req, res) {
-  Usuario.update({
-    nombre_Completo: req.body.nombreUser,
-    correo_e: req.body.correoUser
-},
-{
-  where: {
-    matricula: req.body.matriculaUser,
-  },
-})
+  Usuario.update(
+    {
+      matricula: req.body.nuevaMatricula,
+      nombre_Completo: req.body.nombreUser,
+      correo_e: req.body.correoUser,
+    },
+    {
+      where: {
+        matricula: req.body.matriculaUser,
+      },
+    }
+  )
     .then((result) => {
-      Estudiante.update({
+      Estudiante.update(
+        {
           carrera: req.body.carreraUser,
-          semestre: req.body.semestreUser
-      },{
-        where: {
-          matricula_Estudiante: req.body.matriculaUser
+          semestre: req.body.semestreUser,
+        },
+        {
+          where: {
+            matricula_Estudiante: req.body.matriculaUser,
+          },
         }
-      }
       )
         .then((result) => {
           res.send({ Code: 1 });
@@ -832,106 +1038,120 @@ app.post("/EditEstudiante", function (req, res) {
     });
 });
 
+//Se va a transferir a GestorUsuarios.js
 //Edicion de encargados
 app.post("/EditEncargados", function (req, res) {
   //console.log(req.body)
-  Usuario.update({
+  Usuario.update(
+    {
+      matricula: req.body.nuevaMatricula,
       nombre_Completo: req.body.nombreUser,
-      correo_e: req.body.correoUser
-  },
-  {
-    where: {
-      matricula: req.body.matriculaUser,
+      correo_e: req.body.correoUser,
     },
-  }
+    {
+      where: {
+        matricula: req.body.matriculaUser,
+      },
+    }
   )
-  .then((result) => {
-    res.send({ Code: 1 });
-  })
-  .catch((error) => {
-    console.log(error);
-    res.send({ Code: -1 });
-  })
-  .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-  });
-});
-
-//Funcion de busqueda de Encargada
-app.post("/searchEncargada", function (req, res) {
-  Usuario.findAll({
-    where: {matricula: req.body.matriculaUser},
-    attributes: [
-      "nombre_Completo",
-      "correo_e",
-    ]
-    })
     .then((result) => {
-      Estudiante.count({
-        where: {matricula_Estudiante: req.body.matriculaUser}
-      })
-      .then((resultado) => {
-        console.log(resultado)
-        if(resultado == 0){
-          res.send({result, Code: 1})
-        }
-        else{
-          res.send({Code: -1})
-        }
-      })
+      res.send({ Code: 1 });
     })
     .catch((error) => {
       console.log(error);
       res.send({ Code: -1 });
     })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
 });
 
+//Se va a transferir a GestorUsuarios.js
+//Funcion de busqueda de Encargada
+app.post("/searchEncargada", function (req, res) {
+  Usuario.findAll({
+    where: { matricula: req.body.matriculaUser },
+    attributes: ["nombre_Completo", "correo_e"],
+  })
+    .then((result) => {
+      Estudiante.count({
+        where: { matricula_Estudiante: req.body.matriculaUser },
+      }).then((resultado) => {
+        console.log(resultado);
+        if (resultado == 0) {
+          res.send({ result, Code: 1 });
+        } else {
+          res.send({ Code: -1 });
+        }
+      });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
+});
+
+//Se va a transferir a GestorUsuarios.js
 //Funcion de busqueda de Alumnos
 app.post("/searchAlumno", function (req, res) {
   Estudiante.findAndCountAll({
-    where: {matricula_Estudiante: req.body.matriculaUser},
-    attributes: [
-      "carrera",
-      "semestre",
-    ]
-    })
+    where: { matricula_Estudiante: req.body.matriculaUser },
+    attributes: ["carrera", "semestre"],
+  })
     .then((result) => {
       let datos = result.rows;
-      let cantidad = result.count
+      let cantidad = result.count;
       Usuario.findAll({
-        where: {matricula: req.body.matriculaUser},
-        attributes: [
-          "nombre_Completo",
-          "correo_e",
-        ]
-        })
+        where: { matricula: req.body.matriculaUser },
+        attributes: ["nombre_Completo", "correo_e"],
+      })
         .then((result) => {
-          if(cantidad == 1){
-            res.send({result, datos, Code: 1})
-          }
-          else{
-            res.send({Code: -1})
+          if (cantidad == 1) {
+            res.send({ result, datos, Code: 1 });
+          } else {
+            res.send({ Code: -1 });
           }
         })
         .catch((error) => {
           console.log(error);
           res.send({ Code: -1 });
-        })
+        });
     })
     .catch((error) => {
       console.log(error);
       res.send({ Code: -1 });
+    });
+});
+
+//Conseguir datos de las descripciones
+app.post("/infoDescripcionesMenus", function (req, res) {
+  Descripcion_Menu.findAll({
+    where: {
+      id_texto: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    },
+  })
+    .then((result) => {
+      //console.log(result);
+      res.send(result);
     })
+    .catch((error) => {
+      console.log(error);
+      res.send({ Code: -1 });
+    });
 });
 
 //Inicializar el servidor
 app.listen(PORT, function () {
   //Conectarse a la base de datos al iniciar el servidor
+  //Utilizar alter:true para guardar cambios de los modelos a las tablas de SQL, en caso de que no se haga en automatico
+  //Jamas usar force:true a no ser que sea indicado
   sequelize
     .authenticate()
     .then(() => {
-      sequelize.sync().then(() => console.log("Conexion exitosa"));
+      sequelize
+        .sync(/*{ alter: true }*/)
+        .then(() => console.log("Conexion exitosa"));
     })
     .catch((error) => console.log("Error de conexion: ", error));
 });
