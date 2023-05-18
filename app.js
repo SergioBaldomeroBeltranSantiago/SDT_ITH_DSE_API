@@ -2,7 +2,7 @@
 //API
 const express = require("express");
 const app = express();
-//Base de datis
+//Base de datos
 const sequelize = require("./Database/db");
 const { Op } = require("sequelize");
 //CROSS-ORIGIN-RESOURCE-SHARING
@@ -23,9 +23,11 @@ const bcrypt = require("bcryptjs");
 //Enrutamiento
 const GestorTramites = require("./Routes/GestorTramites");
 const GestorUsuarios = require("./Routes/GestorUsuarios");
+const GestorSolicitudes = require("./Routes/GestorSolicitudes");
 
 app.use("/GestionTramites", GestorTramites);
 app.use("/GestionUsuarios", GestorUsuarios);
+app.use("/gestionsolicitudes", GestorSolicitudes);
 
 //Patron GOF - Singleton
 //Modelos
