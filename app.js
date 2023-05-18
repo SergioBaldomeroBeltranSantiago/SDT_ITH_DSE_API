@@ -27,7 +27,7 @@ const GestorSolicitudes = require("./Routes/GestorSolicitudes");
 
 app.use("/GestionTramites", GestorTramites);
 app.use("/GestionUsuarios", GestorUsuarios);
-app.use("/gestionsolicitudes", GestorSolicitudes);
+app.use("/solicitudes", GestorSolicitudes);
 
 //Patron GOF - Singleton
 //Modelos

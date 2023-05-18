@@ -1,20 +1,22 @@
 //Imports
 //API
-const express = require("express");
+const express = require( "express" );
 const router = express.Router();
 //CROSS-ORIGIN-RESOURCE-SHARING
-const cors = require("cors");
+const cors = require( "cors" );
 //Archivos y documentos
-const fs = require("fs");
-const path = require("path");
-const XLSX = require("xlsx");
+const fs = require( "fs" );
+const path = require( "path" );
+const XLSX = require( "xlsx" );
 //Base de datos
-const { Op } = require("sequelize");
+const {
+  Op
+} = require( "sequelize" );
 
 //Modelos
-const Usuario = require("../Database/Models/Usuario");
-const Solicitud = require("../Database/Models/Solicitud");
-const Tramite = require("../Database/Models/Tramite");
+const Usuario = require( "../Database/Models/Usuario" );
+const Solicitud = require( "../Database/Models/Solicitud" );
+const Tramite = require( "../Database/Models/Tramite" );
 
 //Utilidades
 const estatus = {
@@ -33,93 +35,149 @@ const estatus = {
 };
 
 //Ruta de la raiz del documento
-router.use(express.static(__dirname));
+router.use( express.static( __dirname ) );
 
 //CORS
-router.use(cors());
+router.use( cors() );
 
 //Middleware
-router.use(express.json({ limit: "10mb" }));
-router.use(express.urlencoded({ extended: true, limit: "10mb" }));
+router.use( express.json( {
+  limit: "10mb"
+} ) );
+router.use( express.urlencoded( {
+  extended: true,
+  limit: "10mb"
+} ) );
 
 //Obtendremos un reporte estadístico basandonos en un periodo de tiempo especificado por la maestra.
-router.get("/estadisticosolicitudes", function (req, res) {
+router.get( "/estadisticos", function ( req, res ) {
   //Obtenemos todas las solicitudes existentes en el sistema
-  Solicitud.findAll({
-    attributes: ["fecha_Solicitud", "fecha_Actualizacion", "estatus_Actual"],
-    include: [
-      {
+  Solicitud.findAll( {
+      attributes: [ "fecha_Solicitud", "fecha_Actualizacion", "estatus_Actual" ],
+      include: [ {
         model: Usuario,
-        attributes: ["matricula", "nombre_Completo"],
-      },
-      { model: Tramite, attributes: ["nombre_Tramite"] },
-    ],
-    where: {
-      [Op.or]: [
-        {
-          fecha_Solicitud: {
-            [Op.between]: [
-              req.query.fechaInicioInforme,
-              req.query.fechaFinalInforme,
-            ],
-          },
-        },
-        {
-          fecha_Actualizacion: {
-            [Op.between]: [
-              req.query.fechaInicioInforme,
-              req.query.fechaFinalInforme,
-            ],
-          },
-        },
-      ],
-    },
-  })
-    .then((respuesta) => {
-      //Abrimos el archivo excel
-      const excelLibro = XLSX.readFile(
-        path.join(__dirname, "..") + "/Documentos/Otros/Plantilla_Estadisticas.xlsx"
-      );
-      //Abrimos una hoja de excel
-      const excelHoja = excelLibro.Sheets["Hoja_1"];
+        attributes: [ "matricula", "nombre_Completo" ],
+      }, {
+        model: Tramite,
+        attributes: [ "nombre_Tramite" ]
+      }, ],
+    } )
+    .then( ( respuesta ) => {
 
-      var enunciado =
-        'El alumno "' +
-        respuesta[0].Usuario.nombre_Completo +
-        '" con matricula "' +
-        respuesta[0].Usuario.matricula +
-        '" ha solicitado el trámite de "' +
-        respuesta[0].Tramite.nombre_Tramite +
-        '" en la fecha: ' +
-        respuesta[0].fecha_Solicitud +
-        " .A la fecha: " +
-        respuesta[0].fecha_Actualizacion +
-        ' la solicitud se encuentra en el estatus de "' +
-        estatus[respuesta[0].estatus_Actual] +
-        '".';
+      //Inicializamos el JSON de los registros de solicitudes.
+      var excelDatosRegistros = [ {} ];
 
-      var referenciaCelda = XLSX.utils.encode_cell({ r: 1, c: 1 });
-      excelHoja[referenciaCelda] = { v: enunciado };
-      referenciaCelda = XLSX.utils.encode_cell({ r: 2, c: 1 });
-      excelHoja[referenciaCelda] = {
-        v: "Solicitudes totales: " + respuesta.length,
-      };
+      //Inicializamos los conteos estadísticos.
+      var conteoTramitesTotales = 0;
+      var conteoTramitesIniciados = 0;
+      var conteoTramitesFinalizados = 0;
+      var excelDatosConteos = [ {} ];
 
-      /*
-      excelHoja["A1"] = { v: enunciado };
-      excelHoja["A2"] = { v: "Solicitudes totales: " + respuesta.length };
-      */
+      //Se recorren todas las solicitudes existentes.
+      for ( var indice = 0; indice < respuesta.length; indice++ ) {
+        //Se crea un enunciado para una lectura mas facíl por cada solicitud existente.
+        var enunciado =
+          'El alumno "' +
+          respuesta[ indice ].Usuario.nombre_Completo +
+          '" con matricula "' +
+          respuesta[ indice ].Usuario.matricula +
+          '" ha solicitado el trámite de "' +
+          respuesta[ indice ].Tramite.nombre_Tramite +
+          '".\n Se solicito el dia: ' +
+          respuesta[ indice ].fecha_Solicitud +
+          " y al dia de: " +
+          respuesta[ indice ].fecha_Actualizacion +
+          ' la solicitud se encuentra en el estatus de "' +
+          estatus[ respuesta[ indice ].estatus_Actual ] +
+          '".';
 
-      XLSX.writeFile(
-        excelLibro,
-        path.join(__dirname, "..") + "/Documentos/Otros/Estadisticas.xlsx"
-      );
-      res.send("a");
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Codigo: 0, Mensaje: error });
-    });
-});
+        //Se añade el registro a la colección para poder enviarlo a la hoja de excel.
+        excelDatosRegistros.push( {
+          "Matricula": respuesta[ indice ].Usuario.matricula,
+          "Nombre del Alumno": respuesta[ indice ].Usuario.nombre_Completo,
+          "Tramite solicitado": respuesta[ indice ].Tramite.nombre_Tramite,
+          "Fecha en la que se solicito": respuesta[ indice ].fecha_Solicitud,
+          "Ultimo estatus": estatus[ respuesta[ indice ].estatus_Actual ],
+          "Ultima fecha de actualizacion": respuesta[ indice ].fecha_Actualizacion,
+          "Registro": enunciado
+        } );
+
+        //Contamos todas las solicitudes que tiene el sistema.
+        conteoTramitesTotales++;
+
+        //Obtenemos fechas importantes
+        var fechaInicio = new Date( req.query.fechaInicioInforme ).getTime();
+        var fechaFinal = new Date( req.query.fechaFinalInforme ).getTime();
+        var fechaSolicitud = new Date( respuesta[ indice ].fecha_Solicitud ).getTime();
+        var fechaActualizacion = new Date( respuesta[ indice ].fecha_Actualizacion ).getTime();
+
+        //Checamos si la solicitud fue iniciada durante el periodo del informe.
+        if ( fechaSolicitud >= fechaInicio && fechaSolicitud <= fechaFinal ) {
+          conteoTramitesIniciados++;
+        }
+
+        //Checamos si la solicitud fue finalizada en este periodo seleccionado
+        if ( respuesta[ indice ].estatus_Actual === 12 && ( fechaActualizacion >= fechaInicio && fechaActualizacion <= fechaFinal ) ) {
+          conteoTramitesFinalizados++;
+        }
+      }
+
+      //Se añaden los conteos a la coleccion.
+      excelDatosConteos.push( {
+        "Estadistica": "Solicitudes activas en el sistema",
+        "Valor": conteoTramitesTotales,
+      } );
+      excelDatosConteos.push( {
+        "Estadistica": "Solicitudes iniciadas en el periodo: " + req.query.fechaInicioInforme + "|" + req.query.fechaFinalInforme,
+        "Valor": conteoTramitesIniciados,
+      } );
+      excelDatosConteos.push( {
+        "Estadistica": "Solicitudes finalizadas en el periodo: " + req.query.fechaInicioInforme + "|" + req.query.fechaFinalInforme,
+        "Valor": conteoTramitesFinalizados,
+      } );
+
+      //Una vez que recorremos todas las solicitudes, se crea el archivo Excel.
+      const excelLibro = XLSX.utils.book_new();
+
+      //Se crea la hoja de excel con los registros obtenidos anteriormente.
+      const excelHojaRegistros = XLSX.utils.json_to_sheet( excelDatosRegistros );
+
+      //Se crea la hoja de excel con los conteos de las solicitudes.
+      const excelHojaConteos = XLSX.utils.json_to_sheet( excelDatosConteos );
+
+      //Se añade la hoja de excel de registros al archivo excel
+      XLSX.utils.book_append_sheet( excelLibro, excelHojaRegistros, "Registros" );
+
+      //Se añade la hoja de excel de conteos al archivo excel
+      XLSX.utils.book_append_sheet( excelLibro, excelHojaConteos, "Conteos" );
+
+      //Se crea el archivo excel en la carpeta Documentos/Otros de la raiz del sistema.
+      const excelDirectorio = path.join( __dirname, ".." ) + "/Documentos/Otros"
+      const excelArchivo = excelDirectorio + "/Estadistico.xlsx";
+      if ( !fs.existsSync( excelDirectorio ) ) {
+        fs.mkdirSync( excelDirectorio, {
+          recursive: true
+        } );
+      }
+
+      if ( fs.existsSync( excelArchivo ) ) {
+        fs.unlinkSync( excelArchivo );
+      }
+
+      XLSX.writeFile( excelLibro, excelArchivo );
+      res.send( {
+        Codigo: 1,
+        Mensaje: "Estadístico terminado."
+      } );
+
+    } )
+    .catch( ( error ) => {
+      console.log( error );
+      res.send( {
+        Codigo: 0,
+        Mensaje: error
+      } );
+    } );
+} );
 
 module.exports = router;
