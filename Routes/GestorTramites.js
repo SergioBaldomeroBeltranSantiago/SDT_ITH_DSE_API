@@ -15,7 +15,7 @@ router.use(express.json({ limit: "10mb" }));
 router.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 //Envia todos los trámites existentes en formato de lista, para un botón de selección utilizado para la administración de los trámites
-router.get("/ObtenerListaTramites", function (req, res) {
+router.get("/lista", function (req, res) {
   Tramite.findAll({ attributes: ["id_Tramite", "nombre_Tramite"] })
     .then((resultado) => {
       res.send(resultado);
@@ -27,7 +27,7 @@ router.get("/ObtenerListaTramites", function (req, res) {
 });
 
 //Envia toda la información y requisitos pertenecientes a un trámite en particular, para su posterior edición
-router.post("/ObtenerDatosTramite", function (req, res) {
+router.post("/detalles", function (req, res) {
   Tramite.findAll({
     attributes: ["id_Tramite", "nombre_Tramite"],
     include: {
