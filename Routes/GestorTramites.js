@@ -47,7 +47,7 @@ router.post("/detalles", function (req, res) {
 });
 
 //Envia toda la información y requisitos pertenecientes a un trámite en particular, para su posterior edición
-router.post("/ActualizarMetadata", function (req, res) {
+router.post("/actualizar", function (req, res) {
   Tramite_M.update(
     { texto: req.body.contenido },
     { where: { id_Tramite_M: req.body.id_metadata } }
