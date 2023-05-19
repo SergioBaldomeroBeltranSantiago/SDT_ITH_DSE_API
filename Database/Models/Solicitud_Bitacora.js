@@ -12,7 +12,7 @@ Solicitud_Bitacora.init(
       autoIncrement: true,
     },
     fecha_Cambio: {
-      type: DataTypes.DATEONLY,
+      type: DataTypes.DATE,
       allowNull: false,
     },
     estatus_Anterior: {

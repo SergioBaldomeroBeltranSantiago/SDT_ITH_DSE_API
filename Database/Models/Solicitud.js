@@ -18,11 +18,11 @@ Solicitud.init(
       allowNull: true,
     },
     fecha_Solicitud: {
-      type: DataTypes.DATEONLY,
+      type: DataTypes.DATE,
       allowNull: false,
     },
     fecha_Actualizacion: {
-      type: DataTypes.DATEONLY,
+      type: DataTypes.DATE,
       allowNull: false,
     },
     estatus_Actual: {
