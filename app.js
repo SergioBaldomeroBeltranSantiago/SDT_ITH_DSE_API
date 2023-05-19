@@ -727,31 +727,28 @@ app.post("/updateApplication", function (req, res) {
 });
 
 //Subir documentos al sistema
-app.post(
-  "/UploadDocuments",
-  /*upload.any("pdf"),*/ function (req, res) {
-    if (!req.files) {
-      console.log("No files to upload");
-    } else {
-      let successUpload = true;
-      for (var indice = 0; indice < req.files.length; indice++) {
-        Documento.create({
-          nombre_Documento: req.files[indice].originalname,
-          ruta_Documento: req.files[indice].path,
-          solicitud_Vinculada: req.body.text,
+app.post("/UploadDocuments", upload, function (req, res) {
+  if (!req.files) {
+    console.log("No files to upload");
+  } else {
+    let successUpload = true;
+    for (var indice = 0; indice < req.files.length; indice++) {
+      Documento.create({
+        nombre_Documento: req.files[indice].originalname,
+        ruta_Documento: req.files[indice].path,
+        solicitud_Vinculada: req.body.idSolicitud,
+      })
+        .then(() => {
+          successUpload = true;
         })
-          .then(() => {
-            successUpload = true;
-          })
-          .catch((error) => {
-            console.log(error);
-            successUpload = false;
-          });
-      }
-      res.send({ successUpload });
+        .catch((error) => {
+          console.log(error);
+          successUpload = false;
+        });
     }
+    res.send({ successUpload });
   }
-);
+});
 
 //Obtener documentos de la solicitud
 app.post("/RetrieveDocuments", function (req, res) {
@@ -814,7 +811,6 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
     },
   ];
 
-  
   //Solicitudes totales
   Solicitud.findAndCountAll({
     where: {
