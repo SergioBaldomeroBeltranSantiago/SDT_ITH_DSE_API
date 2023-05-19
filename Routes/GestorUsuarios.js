@@ -15,46 +15,59 @@ router.use(express.json({ limit: "10mb" }));
 router.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 //Login
-router.post("/Login", function (req, res) {
-  Usuario.findByPk(req.body.id_number)
-    .then((result) => {
-      if (result != null) {
+router.post("/sesion", function (req, res) {
+  Usuario.findByPk(req.body.matricula)
+    .then((resultado) => {
+      if (resultado != null) {
         Usuario.count({
           where: {
-            matricula: req.body.id_number,
-            contraseña: req.body.password,
+            matricula: req.body.matricula,
+            contraseña: req.body.contraseña,
           },
         })
-          .then((consult) => {
-            if (consult > 0) {
-              res.send({ Code: 1 });
+          .then((consulta) => {
+            if (consulta > 0) {
+              res.send({ Codigo: 1, Mensaje: "Inicio de sesión exitoso." });
             } else {
-              res.send({ Code: 0 });
+              res.send({
+                Codigo: 0,
+                Mensaje: "Usuario/Contraseña incorrecto.",
+              });
             }
           })
           .catch((error) => {
             console.log(error);
+            res.send({ Codigo: 0, Mensaje: error });
           });
       } else {
-        res.send({ Code: 0 });
+        res.send({ Codigo: 0, Mensaje: "Usuario/Contraseña incorrecto." });
       }
     })
     .catch((error) => {
       console.log(error);
+      res.send({ Codigo: 0, Mensaje: error });
     });
 });
 
 //Conseguir datos del usuario
-router.post("/ConsultarUsuario", function (req, res) {
-  Usuario.findByPk(req.body.matricula_Usuario, {
+router.post("/obtener", function (req, res) {
+  console.log(req.body);
+  Usuario.findByPk(req.body.matricula, {
     include: { model: Estudiante },
   })
     .then((resultado) => {
-      res.send(resultado);
+      res.send({
+        Codigo: 1,
+        Mensaje: "Usuario encontrado",
+        Informacion: resultado,
+      });
     })
     .catch((error) => {
       console.log(error);
-      res.send({ Code: -1 });
+      res.send({
+        Codigo: 0,
+        Mensaje: error,
+      });
     });
 });
 
