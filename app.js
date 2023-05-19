@@ -25,11 +25,10 @@ const GestorTramites = require("./Routes/GestorTramites");
 const GestorUsuarios = require("./Routes/GestorUsuarios");
 const GestorSolicitudes = require("./Routes/GestorSolicitudes");
 
-app.use("/GestionTramites", GestorTramites);
-app.use("/GestionUsuarios", GestorUsuarios);
+app.use("/tramites", GestorTramites);
+app.use("/usuarios", GestorUsuarios);
 app.use("/solicitudes", GestorSolicitudes);
 
-//Patron GOF - Singleton
 //Modelos
 const Usuario = require("./Database/Models/Usuario");
 const Estudiante = require("./Database/Models/Estudiante");
@@ -55,10 +54,6 @@ const estatusLexico = {
   11: "El finiquito ha sido enviado, necesitas venir en persona a firmarlo",
   12: "Solicitud terminada",
 };
-
-const fileStatistics = reader.readFile(
-  "./Estaticos/Prototipo - Estadistico.xlsx"
-);
 
 //Definimos el puerto a utilizar
 const PORT = process.env.PORT;
@@ -807,6 +802,7 @@ app.get("/ObtainDocument", function (req, res) {
     });
 });
 
+//Se va a eliminar
 app.get("/ObtenerConteoEstadistico", function (req, res) {
   let estadisticas = [
     {
@@ -818,6 +814,7 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
     },
   ];
 
+  
   //Solicitudes totales
   Solicitud.findAndCountAll({
     where: {
