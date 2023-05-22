@@ -1,19 +1,20 @@
-//Imports
-//API
+//Dependencias
 const express = require("express");
 const router = express.Router();
-//CROSS-ORIGIN-RESOURCE-SHARING
 const cors = require("cors");
-//Archivos y documentos
 const fs = require("fs");
 const path = require("path");
 const XLSX = require("xlsx");
+const winston = require("winston");
+const nodemailer = require("nodemailer");
+const multer = require("multer");
 
 //Modelos
 const Usuario = require("../Database/Models/Usuario");
 const Solicitud = require("../Database/Models/Solicitud");
 const Tramite = require("../Database/Models/Tramite");
 const Documento = require("../Database/Models/Documento");
+const Solicitud_Bitacora = require("../Database/Models/Solicitud_Bitacora");
 
 //Utilidades
 const estatus = {
@@ -31,8 +32,51 @@ const estatus = {
   12: "Solicitud terminada",
 };
 
-//Ruta de la raiz del documento
+//Directorio
 router.use(express.static(__dirname));
+
+//Almacenamiento de archivos
+var storage = multer.diskStorage({
+  destination: (req, file, callBack) => {
+    //Vamos a determinar si los archivos van a la carpeta de solicitudes o correos
+    var carpeta = req.body.isSolicitud ? "Solicitudes" : "Correos";
+    //Aquí determinamos si la subcarpeta es la matricula del estudiante o la ID de la plantilla del correo.
+    var subCarpeta = req.body.subCarpeta;
+    //Checamos que el directorio dinamico exista, si no existe, se crea
+    var directorio =
+      path.join(__dirname, "..") + "/Documentos/" + carpeta + "/" + subCarpeta;
+    if (!fs.existsSync(directorio)) {
+      fs.mkdirSync(directorio, { recursive: true });
+    }
+    callBack(null, directorio);
+  },
+  filename: (req, file, callBack) => {
+    var ahora = new Date();
+    //Generamos la fecha actual, en formato ISO 8601 YYYY-MM-DD-HH-MM-SS
+    var fecha_actual =
+      ahora.getUTCFullYear() +
+      "-" +
+      (ahora.getUTCMonth() + 1) +
+      "-" +
+      ahora.getUTCDate() +
+      "-" +
+      ahora.getUTCHours() +
+      "-" +
+      ahora.getUTCMinutes() +
+      "-" +
+      ahora.getUTCSeconds();
+    //Archivo cuyo nombre empieza con la fecha, se le añade un número aleatorio del 0 al 999, y al final, el nombre original del archivo, todo separado por _
+    var nombre_archivo =
+      fecha_actual +
+      "_" +
+      Math.floor(Math.random() * 1000) +
+      "_" +
+      file.originalname;
+    callBack(null, nombre_archivo);
+  },
+});
+
+const upload = multer({ storage }).any();
 
 //CORS
 router.use(cors());
@@ -49,6 +93,37 @@ router.use(
     limit: "10mb",
   })
 );
+
+//Errores
+const registrarError = winston.createLogger({
+  level: "error",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.File({ filename: "error.log", level: "error" }),
+  ],
+});
+
+const handleError = (error, req, res, next) => {
+  registrarError(error);
+  res.sendStatus(500);
+};
+
+router.use(handleError);
+
+//Correo
+var transporte = nodemailer.createTransport({
+  service: process.env.MAIL_SERVICE,
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASSWORD,
+  },
+});
+
+//Directorio
+router.use(express.static(__dirname));
 
 //Obtendremos un reporte estadístico basandonos en un periodo de tiempo especificado por la maestra.
 router.get("/estadisticos", function (req, res) {
@@ -200,68 +275,212 @@ router.get("/estadisticos", function (req, res) {
 });
 
 //Crearemos una nueva solicitud.
-router.post("/nueva", function (req, res) {
-  //Generamos la fecha actual, en formato ISO 8601 YYYY-MM-DD
-  var ahora = new Date();
-  var fecha_servidor = ahora.toISOString();
+router.post("/nueva", async function (req, res, next) {
+  try {
+    //Validaciones.
+    var validarMatriculaEstudiante = new RegExp("^(B|b|C|c|D|d|M|m)?[0-9]{8}$");
 
-  Solicitud.create({
-    fecha_Solicitud: fecha_servidor,
-    fecha_Actualizacion: fecha_servidor,
-    estatus_Actual: 1,
-    retroalimentacion_Actual: estatus[1],
-    estudiante_Solicitante: req.body.estudianteSolicitante,
-    tramite_Solicitado: req.body.tramiteSolicitado,
-  })
-    .then(() => {
-      res.send({ Codigo: 1, Mensaje: "Solicitud creada con exito" });
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Codigo: 0, Mensaje: error });
-    });
+    if (validarMatriculaEstudiante.test(req.body.matricula)) {
+      //Generamos la fecha actual, en formato ISO 8601 YYYY-MM-DD
+      var ahora = new Date();
+      var fecha_servidor = ahora.toISOString();
+
+      const nuevaSolicitud = await Solicitud.create({
+        fecha_Solicitud: fecha_servidor,
+        fecha_Actualizacion: fecha_servidor,
+        estatus_Actual: 1,
+        retroalimentacion_Actual: estatus[1],
+        estudiante_Solicitante: req.body.matricula,
+        tramite_Solicitado: req.body.Tramite.id_Tramite,
+      });
+
+      nuevaSolicitud ? res.sendStatus(200) : res.sendStatus(400);
+    } else {
+      //Enviamos un status 400 si los datos ingresados no cumplen con el formato valido.
+      res.sendStatus(400);
+    }
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
 });
 
-router.get("/consulta", function (req, res) {
-  Solicitud.findAll({
-    include: [
-      {
-        model: Usuario,
-        attributes: ["matricula", "nombre_Completo"],
-      },
-      { model: Tramite, attributes: ["id_Tramite", "nombre_Tramite"] },
-      {
-        model: Documento,
-        attributes: ["id_Documento", "nombre_Documento", "ruta_Documento"],
-      },
-    ],
-    where: { estudiante_Solicitante: req.query.matricula },
-    order: [
-      ["fecha_Solicitud", "ASC"],
-      ["fecha_Actualizacion", "ASC"],
-    ],
-  })
-    .then((respuesta) => {
-      if (respuesta.length > 0) {
-        res.send({
-          Codigo: respuesta.length > 1 ? 2 : 1,
-          Mensaje:
-            respuesta.length > 1
-              ? "Solicitudes encontradas."
-              : "Solicitud encontrada.",
-          Dato: respuesta.length > 1 ? respuesta : respuesta[0],
+//Actualizamos una solicitud existente.
+router.put("/actualizar", async function (req, res, next) {
+  try {
+    const solicitud = await Solicitud.findByPk(req.body.id_Solicitud);
+    if (solicitud) {
+      var ahora = new Date();
+      var fecha_servidor = ahora.toISOString();
+
+      const solicitudBitacora = await Solicitud_Bitacora.create({
+        fecha_Cambio: fecha_servidor,
+        estatus_Anterior: solicitud.estatus_Actual,
+        retroalimentacion_Anterior: solicitud.retroalimentacion_Actual,
+        solicitud_Asociada: solicitud.id_Solicitud,
+      });
+
+      const solicitudActualizada = await solicitud.update({
+        fecha_Actualizacion: fecha_servidor,
+        estatus_Actual: req.body.estatus_Actual,
+        retroalimentacion_Actual:
+          req.body.retroalimentacion_Actual ?? estatus[req.body.estatus_Actual],
+      });
+
+      res.sendStatus(
+        solicitudBitacora ? (solicitudActualizada ? 200 : 400) : 400
+      );
+    } else {
+      //Enviamos un status 404 si el registro no fue encontrado.
+      res.sendStatus(404);
+    }
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
+
+//Enviamos un correo con los requisitos de la solicitud.
+router.post("/correo", async function (req, res, next) {
+  try {
+    //Validaciones.
+    var validarMatriculaEstudiante = new RegExp("^(B|b|C|c|D|d|M|m)?[0-9]{8}$");
+
+    if (validarMatriculaEstudiante.test(req.body.matricula)) {
+      const usuario = await Usuario.findByPk(req.body.matricula);
+
+      if (usuario) {
+        const usuarioCorreo = usuario.correo_e;
+        const plantillaCorreoDirectorio =
+          path.join(__dirname, "..") + "/JSON/inicio.json";
+
+        fs.readFile(plantillaCorreoDirectorio, "utf8", (error, informacion) => {
+          if (error) {
+            //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+            next(error);
+            return;
+          }
+
+          const informacionJson = JSON.parse(informacion);
+
+          var correoAdjuntos = [];
+
+          const adjuntosCarpeta =
+            path.join(__dirname, "..") + "/Documentos/Correos/Correo de inicio";
+
+          const adjuntosArreglo = informacionJson.adjuntos.split(";");
+
+          for (var indice = 0; indice < adjuntosArreglo.length; indice++) {
+            correoAdjuntos.push({
+              path: adjuntosCarpeta + "/" + adjuntosArreglo[indice],
+            });
+          }
+
+          var parametrosCorreo = {
+            from: process.env.MAIL_USER,
+            to: usuarioCorreo,
+            subject: informacionJson.titulo,
+            text: informacionJson.cuerpo,
+            //attachments: correoAdjuntos,
+          };
+
+          transporte.sendMail(parametrosCorreo, function (error, informacion) {
+            if (error) {
+              //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+              next(error);
+            }
+            res.sendStatus(informacion.accepted.length > 0 ? 200 : 400);
+          });
         });
       } else {
-        res.send({
-          Codigo: 0,
-          Mensaje: "No se encontraron solicitudes relacionadas con el usuario.",
-        });
+        //Enviamos un status 404 si el usuario no fue encontrado.
+        res.sendStatus(404);
       }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Codigo: 0, Mensaje: error });
-    });
+    } else {
+      //Enviamos un status 400 si los datos ingresados no cumplen con el formato valido.
+      res.sendStatus(400);
+    }
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
+
+//Pedimos la o las solicitudes que tenga un usuario
+router.get("/consulta", async function (req, res, next) {
+  try {
+    //Validaciones.
+    var validarMatriculaEstudiante = new RegExp("^(B|b|C|c|D|d|M|m)?[0-9]{8}$");
+    if (validarMatriculaEstudiante.test(req.query.matricula)) {
+      const usuario = await Usuario.findByPk(req.query.matricula);
+      if (usuario) {
+        const listaSolicitudesUsuario = await Solicitud.findAll({
+          include: [
+            {
+              model: Usuario,
+              attributes: ["matricula", "nombre_Completo", "correo_e"],
+            },
+            { model: Tramite, attributes: ["id_Tramite", "nombre_Tramite"] },
+            {
+              model: Documento,
+              attributes: [
+                "id_Documento",
+                "nombre_Documento",
+                "ruta_Documento",
+              ],
+            },
+          ],
+          attributes: [
+            "id_Solicitud",
+            "folio_Solicitud",
+            "fecha_Solicitud",
+            "fecha_Actualizacion",
+            "estatus_Actual",
+            "retroalimentacion_Actual",
+          ],
+          where: { estudiante_Solicitante: req.query.matricula },
+          order: [
+            ["fecha_Solicitud", "ASC"],
+            ["fecha_Actualizacion", "ASC"],
+          ],
+        });
+        //Enviamos la lista de solicitudes del usuario, incluso si esta vacia
+        res.status(200).send(listaSolicitudesUsuario);
+      } else {
+        //Enviamos un status 404 si el usuario no fue encontrado.
+        res.sendStatus(404);
+      }
+    } else {
+      //Enviamos un status 400 si los datos ingresados no cumplen con el formato valido.
+      res.sendStatus(400);
+    }
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
+
+//Subir documentos para la solicitud
+router.post("/documentos", upload, async function (req, res, next) {
+  try {
+    if (!req.files) {
+      res.sendStatus(400);
+    } else {
+      var successfull = false;
+      for (var indice = 0; indice < req.files.length; indice++) {
+        const documentoSolicitud = await Documento.create({
+          nombre_Documento: req.files[indice].originalname,
+          ruta_Documento: req.files[indice].path,
+          solicitud_Vinculada: req.body.id_Solicitud,
+        });
+        successfull = documentoSolicitud ? true : false;
+      }
+      res.sendStatus(successfull ? 200 : 400);
+    }
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
 });
 
 module.exports = router;
