@@ -56,9 +56,10 @@ router.get("/lista", async function (req, res, next) {
 //Envia toda la información y requisitos pertenecientes a un trámite en particular, para su posterior edición
 router.get("/consulta", async function (req, res, next) {
   try {
-    const tramite = await Tramite.findByPk(req.query.Tramite.id_Tramite, {
+    const tramite = await Tramite.findByPk(req.query.id_Tramite, {
       include: [{ model: Tramite_M }],
     });
+    console.log(tramite);
     tramite ? res.status(200).send(tramite) : res.sendStatus(404);
   } catch (error) {
     //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
@@ -98,17 +99,6 @@ router.post("/actualizar", async function (req, res, next) {
     //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
     next(error);
   }
-  Tramite_M.update(
-    { texto: req.body.contenido },
-    { where: { id_Tramite_M: req.body.id_metadata } }
-  )
-    .then((resultado) => {
-      res.send({ Code: 1 });
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: 0 });
-    });
 });
 
 //Conseguir datos de las descripciones para avanzar el tramite

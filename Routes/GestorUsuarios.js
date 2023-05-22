@@ -95,6 +95,7 @@ router.get("/consultar", async function (req, res, next) {
         include: {
           model: Estudiante,
         },
+        attributes: ["matricula", "nombre_Completo", "correo_e"],
       });
 
       //Enviamos un status 200 si el usuario fue encontrado.
@@ -136,9 +137,41 @@ router.post("/nueva", async function (req, res, next) {
       req.body.semestre > 0 &&
       req.body.semestre < 15
     ) {
+      //Buscamos al usuario, para ver si existe.
+      const usuario = await Usuario.findByPk(req.body.matricula, {
+        include: [{ model: Estudiante }],
+      });
+      if (!usuario) {
+        //Si no existe, se crea.
+        const usuarioNuevo = await Usuario.create({
+          matricula: req.body.matricula,
+          nombre_Completo: req.body.nombre_Completo,
+          contraseña: req.body.matricula,
+          correo_e: req.body.matricula,
+          Estudiante: {
+            carrera: req.body.Estudiante.carrera,
+            semestre: req.body.Estudiante.semestre,
+          },
+        });
+
+        res.sendStatus(usuarioNuevo ? 200 : 404);
+      } else {
+        //Si se encuentra, se actualiza
+        const usuarioActualizado = await usuario.update({
+          matricula: req.body.nuevaMatricula ?? req.body.matricula,
+          nombre_Completo: req.body.nombre_Completo,
+          contraseña: req.body.matricula,
+          correo_e: req.body.matricula,
+          Estudiante: {
+            carrera: req.body.Estudiante.carrera,
+            semestre: req.body.Estudiante.semestre,
+          },
+        });
+        res.sendStatus(usuarioActualizado ? 200 : 404);
+      }
     } else {
       //Enviamos un status 400 si los datos ingresados no cumplen con el formato valido.
-      res.status(400);
+      res.sendStatus(400);
     }
   } catch (error) {
     //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
@@ -148,7 +181,6 @@ router.post("/nueva", async function (req, res, next) {
 
 //Actualizar un usuario
 router.put("/actualizar", async function (req, res, next) {
-  console.log(req.body);
   try {
     //Validaciones.
     var validarMatriculaEstudiante = new RegExp("^(B|b|C|c|D|d|M|m)?[0-9]{8}$");
@@ -257,118 +289,37 @@ router.put("/actualizar", async function (req, res, next) {
   }
 });
 
-//Se planea borrar
-//Subida de usuarios
-router.post("/SubirUsuarios", function (req, res) {
-  console.log(req.body);
-  Usuario.findOrCreate({
-    where: {
-      matricula: req.body.matriculaUser,
-    },
-    defaults: {
-      matricula: req.body.matriculaUser,
-      nombre_Completo: req.body.nombreUser,
-      contraseña: req.body.contraseñaUser,
-      correo_e: req.body.correoUser,
-    },
-  })
-    .then(() => {
-      if (req.body.isEstudiante) {
-        Estudiante.findOrCreate({
-          where: {
-            matricula_Estudiante: req.body.matriculaUser,
-          },
-          defaults: {
-            matricula_Estudiante: req.body.matriculaUser,
-            carrera: req.body.carreraUser,
-            semestre: req.body.semestreUser,
-          },
-        })
-          .then(() => {})
-          .catch((error) => {
-            console.log(error);
-            res.send({
-              Code: -1,
-            });
-          });
-      }
-      res.send({
-        Code: 1,
-      });
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({
-        Code: -1,
-      });
-    });
-});
+//Actualiza solo la contraseña
+router.put("/contraseña", async function (req, res, next) {
+  try {
+    //Validaciones.
+    var validarMatriculaEstudiante = new RegExp("^(B|b|C|c|D|d|M|m)?[0-9]{8}$");
+    var validarMatriculaEncargada = new RegExp("^[0-9]{3}$");
 
-//Reestablecer contraseña de usuario
-//Se planea borrar
-router.post("/ReiniciarContraseña", function (req, res) {
-  Usuario.update(
-    {
-      contraseña: req.body.matriculaUser,
-    },
-    {
-      where: {
-        matricula: req.body.matriculaUser,
-      },
-    }
-  );
-});
-
-// Editar información de usuario
-//Se planea borrar
-router.post("/ActualizarInformacionUsuario", function (res, res) {
-  Usuario.update(
-    {
-      matricula: req.body.UserInfo.matricula,
-      nombre_Completo: req.body.UserInfo.nombre_Completo,
-      contraseña: req.body.UserInfo.contraseña,
-      correo_e: req.body.UserInfo.correoElectronico,
-    },
-    {
-      where: {
-        matricula: req.body.UserInfo.matricula,
-      },
-    }
-  )
-    .then((resultado) => {
-      console.log(resultado);
-      if (req.body.UserInfo.isEstudiante) {
-        Estudiante.update(
-          {
-            carrera: req.body.UserInfo.carrera,
-            semestre: req.body.UserInfo.semestre,
-          },
-          {
-            where: {
-              matricula_Estudiante: req.body.UserInfo.matricula,
-            },
-          }
-        )
-          .then((resultado) => {
-            console.log(resultado);
-          })
-          .catch((error) => {
-            console.log(error);
-            res.send({
-              Code: 0,
-            });
-          });
+    if (
+      validarMatriculaEstudiante.test(req.body.matricula) ||
+      validarMatriculaEncargada.test(req.body.matricula)
+    ) {
+      const usuario = await Usuario.findByPk(req.body.matricula);
+      if (usuario) {
+        const usuarioNuevaContraseña = await usuario.update({
+          contraseña: req.body.matricula,
+        });
+        //Enviamos un status 200 si el usuario fue actualizado.
+        //Enviamos un status 400 si el usuario no fue actualizado.
+        res.sendStatus(usuarioNuevaContraseña ? 200 : 400);
+      } else {
+        //Enviamos un status 404 si el usuario no fue encontrado.
+        res.sendStatus(404);
       }
-      res.send({
-        Code: 1,
-      });
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({
-        Code: 0,
-      });
-    });
+    } else {
+      //Enviamos un status 400 si los datos ingresados no cumplen con el formato valido.
+      res.sendStatus(400);
+    }
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
 });
 
 module.exports = router;

@@ -483,4 +483,20 @@ router.post("/documentos", upload, async function (req, res, next) {
   }
 });
 
+//Obtener un conteo de las solicitudes existentes, no necesariamente para un estadistico
+router.get("/conteo", async function (req, res, next) {
+  try {
+    const conteoSolicitudes = await Solicitud.findAndCountAll({
+      where: { estatus_Actual: req.query.estatus_Actual },
+    });
+
+    conteoSolicitudes
+      ? res.status(200).send(conteoSolicitudes)
+      : res.sendStatus(404);
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
+
 module.exports = router;
