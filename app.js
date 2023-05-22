@@ -294,24 +294,6 @@ app.post("/ModificarJSON", upload, function (req, res) {
   });
 });
 
-// Función para enviar un correo electrónico
-function sendEmail(correo, newPassword) {
-  const mailOptions = {
-    from: process.env.MAIL_USER,
-    to: correo,
-    subject: "Restablecimiento de Contraseña",
-    text: `Tu nueva contraseña temporal es: ${newPassword}. Por favor, cambia tu contraseña después de iniciar sesión.`,
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-    } else {
-      console.log("Correo electrónico enviado: " + info.response);
-    }
-  });
-}
-
 //Se va a transferir a GestorUsuarios.js
 // Editar usuario
 app.put("/EditarUsuario/:id", function (req, res) {
@@ -372,85 +354,6 @@ app.post("/RequestApplicationList", function (req, res) {
     });
 });
 
-//Conseguir la lista de Tramites cargados en el sistema
-app.post("/RequestTransactionList", function (req, res) {
-  Tramite.findAll({
-    attributes: ["id_Tramite", "nombre_Tramite"],
-    include: [
-      {
-        model: Tramite_M,
-        attributes: ["id_Tramite_M", "texto", "tipo", "orden"],
-        order: [
-          ["tipo", "ASC"],
-          ["orden", "ASC"],
-        ],
-      },
-    ],
-  })
-    .then((consult) => {
-      res.send(consult);
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-});
-
-//Conseguir la lista de requisistos del tramite
-app.post("/RequisitosTramite", function (req, res) {
-  Tramite_M.findAndCountAll({
-    attributes: ["id_Tramite_M", "texto", "tipo", "orden"],
-  })
-    .then((result) => {
-      res.send({ result, Code: 1 });
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-});
-
-//Enviar un correo a un destinatario
-app.post("/SendEmail", function (req, res) {
-  var mailOptions = {
-    from: process.env.MAIL_USER,
-    to: req.body.destinatario,
-    subject: "Haz solicitado con exito el trámite de " + req.body.tramite,
-    text:
-      "Información del trámite para reclamo de pago único por concepto de orfandad. \nLa lista de los siguientes documentos son para subir en plataforma. Se ingluye un documento para llenar A COMPUTADORA" +
-      "\n \n Lista de documentos a subir a la plataforma ##link##: " +
-      "\n    -Carta de reclamacion llenada en maquina." +
-      "\n    -Comprobante de domicilio del alumno. NO DEBE DE SER MAYOR A 3 MESES" +
-      "\n    -Identificacion oficial del Padre/Madre/Tutor." +
-      "\n    -Acta de nacimiento del asegurado o Padre/Madre o Tutor." +
-      "\n    -Acta de defuncion del Padre/Madre o Tutor." +
-      "\n    -Identificacion oficial del alumno. (En caso de ser menor de edad debera de ser la credencial de la institucion)" +
-      "\n    -Acta de nacimiento del alumno." +
-      "\n    -Resolucion de tutela ante un juez de familia. (En caso de aplicar)" +
-      "\n    -Estado de cuenta bancario donde indique CLABE INTERBANCARIA del alumno. (La cuenta debe de ser capaz de recibir una transferencia de gran tamaño)" +
-      "\n    -Constancia de inscripcion del alumno en el ciclo escolar vigente." +
-      "\n \n \nEstaremos al pendiente, al ser aprobados los documentos, porfavor, ¡¡¡seguir las indicaciones de la imagen adjuntada!!!." +
-      "\nEn caso de duda, mandar mensaje a ventanillaith@hermosillo.tecnm.mx o ir a Servicios Escolares.",
-
-    attachments: [
-      {
-        path: "./Estaticos/Requisitos.jpeg",
-      },
-      {
-        path: "./Estaticos/SOLICITUD_DE_RECLAMACIÓN_VIDA.pdf",
-      },
-    ],
-  };
-
-  transporter.sendMail(mailOptions, function (error, info) {
-    if (error) {
-      console.log(error);
-      res.send({ Code: -1 });
-    } else {
-      console.log("Correo enviado: " + info.response);
-      res.send({ Code: 1 });
-    }
-  });
-});
-
 //Correo enviado paraseguimiento a la aseguradora
 app.post("/SendSeguimientoEmail", function (req, res) {
   var mailOptions = {
@@ -475,127 +378,6 @@ app.post("/SendSeguimientoEmail", function (req, res) {
       res.send({ Code: 1 });
     }
   });
-});
-
-//Conseguir la solicitud del estudiante
-app.post("/RequestUserApplication", function (req, res) {
-  Solicitud.findAll({
-    attributes: [
-      "id_Solicitud",
-      "fecha_Solicitud",
-      "fecha_Actualizacion",
-      "estatus_Actual",
-      "retroalimentacion_Actual",
-      "folio_Solicitud",
-    ],
-    include: [
-      {
-        model: Usuario,
-        attributes: ["matricula", "nombre_Completo"],
-        where: { matricula: req.body.matriculaUsuario },
-      },
-      { model: Tramite, attributes: ["id_Tramite", "nombre_Tramite"] },
-      {
-        model: Documento,
-        attributes: ["id_Documento", "nombre_Documento", "ruta_Documento"],
-      },
-    ],
-    where: {
-      estatus_Actual: {
-        [Op.and]: {
-          [Op.lt]: 12,
-          [Op.gt]: 0,
-        },
-      },
-    },
-  })
-    .then((consult) => {
-      res.send(consult);
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
-});
-
-//Saber si el estudiante tiene una solicitud activa o no
-app.post("/UserHasApplication", function (req, res) {
-  Solicitud.count({
-    where: {
-      estudiante_Solicitante: req.body.matriculaUsuario,
-    },
-    estatus_Actual: {
-      [Op.and]: {
-        [Op.lt]: 12,
-        [Op.gt]: 0,
-      },
-    },
-  })
-    .then((consult) => {
-      let hasApplication = consult > 0;
-      res.send({ hasApplication });
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
-});
-
-//Registrar una nueva solicitud
-app.post("/NewUserApplication", function (req, res) {
-  Solicitud.create({
-    fecha_Solicitud: moment(new Date(), "YYYY-MM-DD"),
-    fecha_Actualizacion: moment(new Date(), "YYYY-MM-DD"),
-    estatus_Actual: 1,
-    retroalimentacion_Actual: estatusLexico[1],
-    estudiante_Solicitante: req.body.estudiante_S,
-    tramite_Solicitado: req.body.tramite_S,
-  })
-    .then(() => res.send({ Code: 1 }))
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
-});
-
-//Se va a transferir a GestorUsuarios.js
-//Cambiar contraseña y/o correo electronico
-app.post("/UpdateUserInfo", function (req, res) {
-  Usuario.count({
-    where: {
-      matricula: req.body.matriculaUsuario,
-      contraseña: req.body.contraseñaUsuario,
-    },
-  })
-    .then((result) => {
-      if (result > 0) {
-        if (req.body.contraseñaUsuario !== req.body.newPassword) {
-          Usuario.update(
-            {
-              contraseña: req.body.newPassword,
-            },
-            {
-              where: {
-                matricula: req.body.matriculaUsuario,
-              },
-            }
-          );
-        }
-        if (req.body.correoUsuario !== req.body.newEmail) {
-          Usuario.update(
-            { correo_e: req.body.newEmail },
-            { where: { matricula: req.body.matriculaUsuario } }
-          );
-        }
-        res.send({ Code: 1 });
-      } else {
-        res.send({ Code: -1 });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: 0 });
-    });
 });
 
 //Actualizar la solicitud
@@ -632,30 +414,6 @@ app.post("/updateApplication", function (req, res) {
       console.log(error);
       res.send({ Code: -1 });
     });
-});
-
-//Subir documentos al sistema
-app.post("/UploadDocuments", upload, function (req, res) {
-  if (!req.files) {
-    console.log("No files to upload");
-  } else {
-    let successUpload = true;
-    for (var indice = 0; indice < req.files.length; indice++) {
-      Documento.create({
-        nombre_Documento: req.files[indice].originalname,
-        ruta_Documento: req.files[indice].path,
-        solicitud_Vinculada: req.body.idSolicitud,
-      })
-        .then(() => {
-          successUpload = true;
-        })
-        .catch((error) => {
-          console.log(error);
-          successUpload = false;
-        });
-    }
-    res.send({ successUpload });
-  }
 });
 
 //Obtener documentos de la solicitud
