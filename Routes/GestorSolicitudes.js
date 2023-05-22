@@ -381,7 +381,7 @@ router.post("/correo", async function (req, res, next) {
             to: usuarioCorreo,
             subject: informacionJson.titulo,
             text: informacionJson.cuerpo,
-            //attachments: correoAdjuntos,
+            attachments: correoAdjuntos,
           };
 
           transporte.sendMail(parametrosCorreo, function (error, informacion) {
