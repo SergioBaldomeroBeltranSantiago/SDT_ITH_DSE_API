@@ -1,24 +1,15 @@
 //Dependencias
-//API
 const express = require("express");
 const app = express();
-//Base de datos
 const sequelize = require("./Database/db");
 const { Op } = require("sequelize");
-//CROSS-ORIGIN-RESOURCE-SHARING
 const cors = require("cors");
-//Correos
 const nodemailer = require("nodemailer");
-//Fecha
 const moment = require("moment");
-//Archivos
 const multer = require("multer");
 const reader = require("xlsx");
 const fs = require("fs");
 const path = require("path");
-//Seguridad
-const crypto = require("crypto");
-const bcrypt = require("bcryptjs");
 
 //Enrutamiento
 const GestorTramites = require("./Routes/GestorTramites");
@@ -55,17 +46,17 @@ const estatusLexico = {
   12: "Solicitud terminada",
 };
 
-//Definimos el puerto a utilizar
+//Puerto
 const PORT = process.env.PORT;
 
-//CROSS-ORIGIN-RESOURCE-SHARING
+//CORS
 app.use(cors());
 
 //Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-//Transportador de correo
+//Correo
 var transporter = nodemailer.createTransport({
   service: process.env.MAIL_SERVICE,
   auth: {
@@ -74,10 +65,10 @@ var transporter = nodemailer.createTransport({
   },
 });
 
-//Ruta de la raiz del documento
+//Directorio
 app.use(express.static(__dirname));
 
-//Determinar donde se guardaran los archivos y como se llamaran al subirse
+//Almacenamiento de archivos
 var storage = multer.diskStorage({
   destination: (req, file, callBack) => {
     //Vamos a determinar si los archivos van a la carpeta de solicitudes o correos
@@ -117,9 +108,9 @@ var storage = multer.diskStorage({
   },
 });
 
-//Middleware para subir archivos al servidor
 const upload = multer({ storage }).any();
 
+//Prueba
 app.get("/", function (req, res) {
   res.send("Patata");
 });
@@ -303,56 +294,6 @@ app.post("/ModificarJSON", upload, function (req, res) {
   });
 });
 
-//Se va a transferir a GestorUsuarios.js
-// Restablecer contraseñas
-app.post("/RestorePassword", function (req, res) {
-  // Obtener el correo electrónico del usuario desde la solicitud
-  const matricula = req.body.matriculaUser;
-  //const correo = req.body.correoUser;
-
-  Usuario.findOne({ where: { matricula: matricula } })
-    .then((usuario) => {
-      if (usuario) {
-        // Genera una nueva contraseña temporal
-        const newPassword = req.body.matriculaUser;
-
-        // Actualizar la contraseña de usuario en la base de datos
-        usuario.contraseña = newPassword;
-        usuario
-          .save()
-          .then(() => {
-            // Enviar un correo electrónico al usuario con la nueva contraseña temporal
-            //sendEmail(correo, newPassword);
-
-            // Enviar una respuesta exitosa al cliente
-            res.send({ Code: 1 });
-          })
-          .catch((error) => {
-            console.log(error);
-
-            // Enviar una respuesta de error al cliente
-            res.send({ Code: -1 });
-          });
-      } else {
-        // Enviar una respuesta al cliente indicando que el correo electrónico no existe
-        res.send({ Code: 0 });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-
-      // Enviar una respuesta de error al cliente
-      res.send({ Code: -1 });
-    });
-});
-
-//Se va a borrar
-// Función para generar una contraseña temporal
-function generateTempPassword() {
-  const randomBytes = crypto.randomBytes(4).toString("hex");
-  return bcrypt.hashSync(randomBytes, 10);
-}
-
 // Función para enviar un correo electrónico
 function sendEmail(correo, newPassword) {
   const mailOptions = {
@@ -370,39 +311,6 @@ function sendEmail(correo, newPassword) {
     }
   });
 }
-
-//Se va a transferir a GestorUsuarios.js
-//Conseguir datos del usuario activo en sesión, si es admin
-app.post("/AdminInfo", function (req, res) {
-  Usuario.findByPk(req.body.loginID)
-    .then((result) => {
-      //console.log(result);
-      res.send(result);
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
-});
-
-//Se va a transferir a GestorUsuarios.js
-//Conseguir datos del usuario activo en sesión, si es estudiante
-app.post("/StudentInfo", function (req, res) {
-  Usuario.findByPk(req.body.loginID, {
-    include: [
-      {
-        model: Estudiante,
-      },
-    ],
-  })
-    .then((result) => {
-      res.send(result);
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
-});
 
 //Se va a transferir a GestorUsuarios.js
 // Editar usuario
@@ -871,11 +779,11 @@ app.get("/ObtenerConteoEstadistico", function (req, res) {
                     fileStatistics,
                     ws,
                     fileStatistics.SheetNames.length +
-                      1 +
-                      " - " +
-                      req.query.lowerRange +
-                      " - " +
-                      req.query.upperRange
+                    1 +
+                    " - " +
+                    req.query.lowerRange +
+                    " - " +
+                    req.query.upperRange
                   );
                   reader.writeFile(
                     fileStatistics,
@@ -1062,63 +970,6 @@ app.post("/EditEncargados", function (req, res) {
     });
 });
 
-//Se va a transferir a GestorUsuarios.js
-//Funcion de busqueda de Encargada
-app.post("/searchEncargada", function (req, res) {
-  Usuario.findAll({
-    where: { matricula: req.body.matriculaUser },
-    attributes: ["nombre_Completo", "correo_e"],
-  })
-    .then((result) => {
-      Estudiante.count({
-        where: { matricula_Estudiante: req.body.matriculaUser },
-      }).then((resultado) => {
-        console.log(resultado);
-        if (resultado == 0) {
-          res.send({ result, Code: 1 });
-        } else {
-          res.send({ Code: -1 });
-        }
-      });
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
-});
-
-//Se va a transferir a GestorUsuarios.js
-//Funcion de busqueda de Alumnos
-app.post("/searchAlumno", function (req, res) {
-  Estudiante.findAndCountAll({
-    where: { matricula_Estudiante: req.body.matriculaUser },
-    attributes: ["carrera", "semestre"],
-  })
-    .then((result) => {
-      let datos = result.rows;
-      let cantidad = result.count;
-      Usuario.findAll({
-        where: { matricula: req.body.matriculaUser },
-        attributes: ["nombre_Completo", "correo_e"],
-      })
-        .then((result) => {
-          if (cantidad == 1) {
-            res.send({ result, datos, Code: 1 });
-          } else {
-            res.send({ Code: -1 });
-          }
-        })
-        .catch((error) => {
-          console.log(error);
-          res.send({ Code: -1 });
-        });
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
-});
-
 //Conseguir datos de las descripciones
 app.post("/infoDescripcionesMenus", function (req, res) {
   Descripcion_Menu.findAll({
@@ -1139,13 +990,11 @@ app.post("/infoDescripcionesMenus", function (req, res) {
 //Inicializar el servidor
 app.listen(PORT, function () {
   //Conectarse a la base de datos al iniciar el servidor
-  //Utilizar alter:true para guardar cambios de los modelos a las tablas de SQL, en caso de que no se haga en automatico
-  //Jamas usar force:true a no ser que sea indicado
   sequelize
     .authenticate()
     .then(() => {
       sequelize
-        .sync(/*{ alter: true }*/)
+        .sync()
         .then(() => console.log("Conexion exitosa"));
     })
     .catch((error) => console.log("Error de conexion: ", error));
