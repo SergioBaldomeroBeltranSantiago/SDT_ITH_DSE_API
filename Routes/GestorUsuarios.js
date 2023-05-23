@@ -7,6 +7,7 @@ const winston = require("winston");
 //Modelos
 const Usuario = require("../Database/Models/Usuario");
 const Estudiante = require("../Database/Models/Estudiante");
+const Solicitud = require("../Database/Models/Solicitud");
 
 //CORS
 router.use(cors());
@@ -67,6 +68,7 @@ router.get("/sesion", async function (req, res, next) {
 
       //Enviamos un status 200 si el usuario fue encontrado.
       //Enviamos un status 404 si el usuario no fue encontrado.
+      console.log(usuario);
       res.sendStatus(usuario ? 200 : 404);
     } else {
       //Enviamos un status 400 si los datos ingresados no cumplen con el formato valido.
@@ -114,16 +116,56 @@ router.get("/consultar", async function (req, res, next) {
   }
 });
 
+//Preparar usuarios estudiantes para actualizacion masiva
+const prepararEstudiantes = async () => {
+  const listaEstudiantes = await Usuario.findAll({
+    include: [{ model: Estudiante }],
+  });
+
+  for (var indice = 0; indice < listaEstudiantes.length; indice++) {
+    if (listaEstudiantes[indice].Estudiante !== null) {
+      await listaEstudiantes[indice].update({
+        hasTramiteOrActualizado: false,
+      });
+    }
+  }
+};
+
+//Busca usuarios estudiantes, si estos no tienen una solicitud, ya sea en proceso o finalizada, se eliminan
+const eliminarEstudiantes = async () => {
+  const listaEstudiantes = await Usuario.findAll({
+    include: [{ model: Estudiante }],
+    where: { hasTramiteOrActualizado: false },
+  });
+
+  var listaEstudiantesEliminar = [];
+
+  for (var indice = 0; indice < listaEstudiantes.length; indice++) {
+    if (listaEstudiantes[indice].Estudiante !== null) {
+      var listaSolicitudesEstudiante = await Solicitud.findAll({
+        where: { estudiante_Solicitante: listaEstudiantes[indice].matricula },
+      });
+
+      if (!listaSolicitudesEstudiante.length > 0)
+        listaEstudiantesEliminar.push(listaEstudiantes[indice]);
+    }
+  }
+
+  for (var indice = 0; indice < listaEstudiantesEliminar.length; indice++) {
+    await Usuario.destroy({
+      where: { matricula: listaEstudiantesEliminar[indice].matricula },
+    });
+  }
+
+  console.log(listaEstudiantesEliminar);
+};
+
 //Crear un nuevo usuario individual
-//Aun no esta terminada.
-router.post("/nueva", async function (req, res, next) {
+router.post("/nuevo", async function (req, res, next) {
   try {
     //Validaciones.
     var validarMatriculaEstudiante = new RegExp("^(B|b|C|c|D|d|M|m)?[0-9]{8}$");
     var validarMatriculaEncargada = new RegExp("^[0-9]{3}$");
-    var validarNombreApellido = new RegExp(
-      "^(?!$)[A-Za-zÁÉÍÓÚáéíóúÜüÑñ]{2,}( [A-Za-zÁÉÍÓÚáéíóúÜüÑñ]+)?$"
-    );
     var validarCorreoElectronico = new RegExp(
       "^(?!$)[A-Za-z0-9]+([._-][A-Za-z0-9]+)*@[A-Za-z0-9]+([.-][A-Za-z0-9]+)*\\.[A-Za-z]{2,}(.[A-Za-z]{2,})?$"
     );
@@ -132,47 +174,94 @@ router.post("/nueva", async function (req, res, next) {
     if (
       (validarMatriculaEstudiante.test(req.body.matricula) ||
         validarMatriculaEncargada.test(req.body.matricula)) &&
-      validarNombreApellido.test(req.body.nombre_Completo) &&
       validarCorreoElectronico.test(req.body.correo_e) &&
-      req.body.semestre > 0 &&
-      req.body.semestre < 15
+      req.body.Estudiante.semestre > 0 &&
+      req.body.Estudiante.semestre < 15
     ) {
       //Buscamos al usuario, para ver si existe.
-      const usuario = await Usuario.findByPk(req.body.matricula, {
+      const usuario = await Usuario.findByPk(String(req.body.matricula), {
         include: [{ model: Estudiante }],
       });
       if (!usuario) {
         //Si no existe, se crea.
-        const usuarioNuevo = await Usuario.create({
-          matricula: req.body.matricula,
-          nombre_Completo: req.body.nombre_Completo,
-          contraseña: req.body.matricula,
-          correo_e: req.body.matricula,
-          Estudiante: {
+        if (req.body.Estudiante !== null) {
+          await Usuario.create({
+            matricula: req.body.matricula,
+            nombre_Completo: req.body.nombre_Completo,
+            contraseña: req.body.contraseña,
+            correo_e: req.body.correo_e,
+            hasTramiteOrActualizado: true,
+          });
+          await Estudiante.create({
             carrera: req.body.Estudiante.carrera,
             semestre: req.body.Estudiante.semestre,
-          },
-        });
-
-        res.sendStatus(usuarioNuevo ? 200 : 404);
+            matricula_Estudiante: req.body.matricula,
+          });
+          res.sendStatus(200);
+        } else {
+          await Usuario.create({
+            matricula: req.body.matricula,
+            nombre_Completo: req.body.nombre_Completo,
+            contraseña: req.body.contraseña,
+            correo_e: req.body.correo_e,
+            hasTramiteOrActualizado: true,
+          });
+          res.sendStatus(200);
+        }
       } else {
         //Si se encuentra, se actualiza
-        const usuarioActualizado = await usuario.update({
-          matricula: req.body.nuevaMatricula ?? req.body.matricula,
-          nombre_Completo: req.body.nombre_Completo,
-          contraseña: req.body.matricula,
-          correo_e: req.body.matricula,
-          Estudiante: {
-            carrera: req.body.Estudiante.carrera,
-            semestre: req.body.Estudiante.semestre,
-          },
-        });
-        res.sendStatus(usuarioActualizado ? 200 : 404);
+        if (req.body.Estudiante !== null) {
+          await usuario.update({
+            matricula: req.body.nuevaMatricula ?? usuario.matricula,
+            nombre_Completo: req.body.nombre_Completo,
+            contraseña: req.body.contraseña,
+            correo_e: req.body.correo_e,
+            hasTramiteOrActualizado: true,
+          });
+          await Estudiante.update(
+            {
+              carrera: req.body.Estudiante.carrera,
+              semestre: req.body.Estudiante.semestre,
+              matricula_Estudiante: req.body.matricula,
+            },
+            { where: { matricula_Estudiante: String(req.body.matricula) } }
+          );
+          res.sendStatus(200);
+        } else {
+          await usuario.update({
+            matricula: req.body.nuevaMatricula ?? req.body.matricula,
+            nombre_Completo: req.body.nombre_Completo,
+            contraseña: req.body.contraseña,
+            correo_e: req.body.correo_e,
+            hasTramiteOrActualizado: true,
+          });
+          res.sendStatus(200);
+        }
       }
     } else {
       //Enviamos un status 400 si los datos ingresados no cumplen con el formato valido.
       res.sendStatus(400);
     }
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
+
+router.get("/preparar", async function (req, res, next) {
+  try {
+    prepararEstudiantes();
+    res.sendStatus(200);
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
+
+router.get("/eliminar", async function (req, res, next) {
+  try {
+    eliminarEstudiantes();
+    res.sendStatus(200);
   } catch (error) {
     //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
     next(error);
