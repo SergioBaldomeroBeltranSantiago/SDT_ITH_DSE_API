@@ -636,13 +636,57 @@ router.get("/descarga", async function (req, res, next) {
 });
 
 //Correo enviado paraseguimiento a la aseguradora
-router.post("/seguimiento", async function (req, res, next) {
+router.get("/seguimiento", async function (req, res, next) {
   try {
-    const plantillaCorreo = path.join(
-      __dirname,
-      "..",
-      "/JSON/seguimiento.json"
+    const solicitudSeguir = await Solicitud.findByPk(
+      String(req.query.id_Solicitud),
+      {
+        attributes: [
+          "id_Solicitud",
+          "folio_Solicitud",
+          "fecha_Solicitud",
+          "fecha_Actualizacion",
+          "estatus_Actual",
+          "retroalimentacion_Actual",
+        ],
+        include: [
+          {
+            model: Usuario,
+            attributes: ["matricula", "nombre_Completo", "correo_e"],
+          },
+          { model: Tramite },
+          {
+            model: Solicitud_Bitacora,
+            attributes: [
+              "id_Solicitud_Bitacora",
+              "fecha_Cambio",
+              "estatus_Anterior",
+              "retroalimentacion_Anterior",
+            ],
+          },
+          {
+            model: Documento,
+            attributes: ["id_Documento", "nombre_Documento", "ruta_Documento"],
+          },
+        ],
+      }
     );
+    if (solicitudSeguir) {
+      const plantillaCorreo = path.join(
+        __dirname,
+        "..",
+        "/JSON/seguimiento.json"
+      );
+      fs.readFile(plantillaCorreo, "utf8", (error, informacion) => {
+        if (error) {
+          //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+          next(error);
+          return;
+        }
+      });
+    } else {
+      res.sendStatus(404);
+    }
   } catch (error) {
     //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
     next(error);
