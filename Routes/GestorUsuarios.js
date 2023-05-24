@@ -160,7 +160,7 @@ const eliminarEstudiantes = async () => {
   console.log(listaEstudiantesEliminar);
 };
 
-//Crear un nuevo usuario individual
+//Crear un nuevo usuario, alta masiva
 router.post("/nuevo", async function (req, res, next) {
   try {
     //Validaciones.
@@ -272,13 +272,11 @@ router.get("/eliminar", async function (req, res, next) {
 
 //Actualizar un usuario
 router.put("/actualizar", async function (req, res, next) {
+  console.log(req.body);
   try {
     //Validaciones.
     var validarMatriculaEstudiante = new RegExp("^(B|b|C|c|D|d|M|m)?[0-9]{8}$");
     var validarMatriculaEncargada = new RegExp("^[0-9]{3}$");
-    var validarNombreApellido = new RegExp(
-      "^(?!$)[A-Za-zÁÉÍÓÚáéíóúÜüÑñ]{2,}( [A-Za-zÁÉÍÓÚáéíóúÜüÑñ]+)?$"
-    );
     var validarContraseña = new RegExp("^[0-9]{3,8}");
     var validarCorreoElectronico = new RegExp(
       "^(?!$)[A-Za-z0-9]+([._-][A-Za-z0-9]+)*@[A-Za-z0-9]+([.-][A-Za-z0-9]+)*\\.[A-Za-z]{2,}(.[A-Za-z]{2,})?$"
@@ -307,26 +305,19 @@ router.put("/actualizar", async function (req, res, next) {
         : validarContraseña.test(req.body.nuevaContraseña)
       : true;
 
-    var validacionNombreApellido = req.body.nombre_Completo
-      ? req.body.nombre_Completo === ""
-        ? true
-        : validarNombreApellido.test(req.body.nombre_Completo)
-      : true;
-
     var validacionCorreoElectronico = req.body.correo_e
       ? req.body.correo_e === ""
         ? true
         : validarCorreoElectronico.test(req.body.correo_e)
       : true;
 
-    var validacionSemestre = req.body.semestre
-      ? req.body.semestre > 0 && req.body.semestre < 15
+    var validacionSemestre = req.body.Estudiante.semestre
+      ? req.body.Estudiante.semestre > 0 && req.body.Estudiante.semestre < 15
       : true;
 
     if (
       validacionMatricula &&
       validacionNuevaMatricula &&
-      validacionNombreApellido &&
       validacionContraseña &&
       validacionNuevaContraseña &&
       validacionCorreoElectronico &&
@@ -341,7 +332,9 @@ router.put("/actualizar", async function (req, res, next) {
       });
 
       if (usuarioActual) {
+        console.log("Usuario encontrado, actualizando");
         var usuarioActualizado = await usuarioActual.update({
+          nombre_Completo: req.body.nombre_Completo !== "" ? req.body.nombre_Completo : usuarioActual.nombre_Completo,
           correo_e:
             req.body.correo_e === ""
               ? usuarioActual.correo_e
@@ -353,20 +346,20 @@ router.put("/actualizar", async function (req, res, next) {
         });
 
         if (usuarioActual.Estudiante) {
-          usuarioActualizado = await usuarioActual.update({
-            Estudiante: {
-              carrera:
-                req.body.carrera === ""
-                  ? usuarioActual.Estudiante.carrera
-                  : req.body.carrera,
-              semestre: req.body.semestre
-                ? req.body.semestre
-                : usuarioActual.Estudiante.semestre,
-            },
-          });
+          console.log("Usuario es  estudiante, actualizando")
+          const estudianteActualizado = await Estudiante.update({
+            carrera: req.body.Estudiante.carrera !== "" ? req.body.Estudiante.carrera : usuarioActual.Estudiante.carrera,
+            semestre: req.body.Estudiante.semestre > 0 && req.body.Estudiante.semestre < 15 ? req.body.Estudiante.semestre : usuarioActual.Estudiante.semestre,
+          },{where:{matricula_Estudiante : usuarioActual.matricula}});
 
-          res.status(200).send(usuarioActualizado);
+          console.log("Enviando respuesta");
+          estudianteActualizado ? res.status(200).send(estudianteActualizado) : res.sendStatus(404);
+          return;
         }
+
+        console.log("Enviando respuesta");
+        usuarioActualizado ? res.status(200).send(usuarioActualizado) : res.sendStatus(404);
+        return;
       } else {
         res.sendStatus(404);
       }
@@ -381,20 +374,20 @@ router.put("/actualizar", async function (req, res, next) {
 });
 
 //Actualiza solo la contraseña
-router.put("/contraseña", async function (req, res, next) {
+router.put("/acceso", async function (req, res, next) {
   try {
     //Validaciones.
     var validarMatriculaEstudiante = new RegExp("^(B|b|C|c|D|d|M|m)?[0-9]{8}$");
     var validarMatriculaEncargada = new RegExp("^[0-9]{3}$");
 
     if (
-      validarMatriculaEstudiante.test(req.body.matricula) ||
-      validarMatriculaEncargada.test(req.body.matricula)
+      validarMatriculaEstudiante.test(String(req.body.matricula)) ||
+      validarMatriculaEncargada.test(String(req.body.matricula))
     ) {
-      const usuario = await Usuario.findByPk(req.body.matricula);
+      const usuario = await Usuario.findByPk(String(req.body.matricula));
       if (usuario) {
         const usuarioNuevaContraseña = await usuario.update({
-          contraseña: req.body.matricula,
+          contraseña: usuario.matricula,
         });
         //Enviamos un status 200 si el usuario fue actualizado.
         //Enviamos un status 400 si el usuario no fue actualizado.
@@ -412,5 +405,63 @@ router.put("/contraseña", async function (req, res, next) {
     next(error);
   }
 });
+
+//Dar de alta un nuevo usuario individual.
+router.post("/alta", async function(req,res,next){
+  try{
+    //Validaciones.
+    var validarMatriculaEstudiante = new RegExp("^(B|b|C|c|D|d|M|m)?[0-9]{8}$");
+    var validarMatriculaEncargada = new RegExp("^[0-9]{3}$");
+    var validarCorreoElectronico = new RegExp(
+      "^(?!$)[A-Za-z0-9]+([._-][A-Za-z0-9]+)*@[A-Za-z0-9]+([.-][A-Za-z0-9]+)*\\.[A-Za-z]{2,}(.[A-Za-z]{2,})?$"
+    );
+    var validarSemestre = req.body.Estudiante
+      ? req.body.Estudiante.semestre > 0 && req.body.Estudiante.semestre < 15
+      : true;
+
+    //Checamos si los datos recibidos tienen el formato valido.
+    if (
+      (validarMatriculaEstudiante.test(req.body.matricula) ||
+        validarMatriculaEncargada.test(req.body.matricula)) &&
+      validarCorreoElectronico.test(req.body.correo_e) &&
+      validarSemestre
+    ){
+      const usuarioNuevo = await Usuario.findByPk(String(req.body.matricula));
+
+    if(usuarioNuevo){
+      res.sendStatus(409);
+    }else{
+      const crearUsuario = await Usuario.create({
+        matricula: req.body.matricula,
+        nombre_Completo: req.body.nombre_Completo,
+        correo_e: req.body.correo_e,
+        contraseña: req.body.matricula,
+        hasTramiteOrActualizado: true,
+      });
+
+      if(crearUsuario){
+        if(req.body.Estudiante){
+        const crearEstudiante = await Estudiante.create({
+          carrera: req.body.Estudiante.carrera,
+          semestre: req.body.Estudiante.semestre,
+          matricula_Estudiante: req.body.matricula,
+        })
+
+        res.sendStatus(crearEstudiante ? 200:404)
+      }else{
+        res.sendStatus(200);
+      }
+      }else{
+        res.sendStatus(404);
+      }
+    }
+    }else{
+      res.sendStatus(400);}
+    }
+  catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+})
 
 module.exports = router;
