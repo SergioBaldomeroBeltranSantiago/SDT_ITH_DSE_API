@@ -499,4 +499,102 @@ router.get("/conteo", async function (req, res, next) {
   }
 });
 
+//Obtener las solicitudes existentes, en base a un estatus seleccionado
+router.get("/lista", async function (req, res, next) {
+  try {
+    //Validaciones
+    var validarEstatus = req.query.estatus_Actual
+      ? req.query.estatus_Actual > 0 && req.query.estatus_Actual < 13
+      : false;
+
+    if (validarEstatus) {
+      const listaSolicitudesFiltrada = await Solicitud.findAll({
+        attributes: [
+          "id_Solicitud",
+          "folio_Solicitud",
+          "fecha_Solicitud",
+          "fecha_Actualizacion",
+          "estatus_Actual",
+          "retroalimentacion_Actual",
+        ],
+        where: { estatus_Actual: req.query.estatus_Actual },
+        include: [
+          {
+            model: Usuario,
+            attributes: ["matricula", "nombre_Completo", "correo_e"],
+          },
+          { model: Tramite },
+          {
+            model: Solicitud_Bitacora,
+            attributes: [
+              "id_Solicitud_Bitacora",
+              "fecha_Cambio",
+              "estatus_Anterior",
+              "retroalimentacion_Anterior",
+            ],
+          },
+          {
+            model: Documento,
+            attributes: ["id_Documento", "nombre_Documento", "ruta_Documento"],
+          },
+        ],
+      });
+
+      //Enviamos la lista de solicitudes, incluso si esta vacia
+      res.status(200).send(listaSolicitudesFiltrada);
+    } else {
+      //Enviamos un status 400 si los datos ingresados no cumplen con el formato valido.
+      res.sendStatus(400);
+    }
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
+
+//Obtenemos una solicitud en especifico, y solo una.
+router.get("/consultar", async function (req, res, next) {
+  try {
+    const solicitudEncontrada = await Solicitud.findByPk(
+      String(req.query.id_Solicitud),
+      {
+        attributes: [
+          "id_Solicitud",
+          "folio_Solicitud",
+          "fecha_Solicitud",
+          "fecha_Actualizacion",
+          "estatus_Actual",
+          "retroalimentacion_Actual",
+        ],
+        include: [
+          {
+            model: Usuario,
+            attributes: ["matricula", "nombre_Completo", "correo_e"],
+          },
+          { model: Tramite },
+          {
+            model: Solicitud_Bitacora,
+            attributes: [
+              "id_Solicitud_Bitacora",
+              "fecha_Cambio",
+              "estatus_Anterior",
+              "retroalimentacion_Anterior",
+            ],
+          },
+          {
+            model: Documento,
+            attributes: ["id_Documento", "nombre_Documento", "ruta_Documento"],
+          },
+        ],
+      }
+    );
+    solicitudEncontrada
+      ? res.status(200).send(solicitudEncontrada)
+      : res.sendStatus(404);
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
+
 module.exports = router;
