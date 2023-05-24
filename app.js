@@ -3,7 +3,6 @@ const express = require("express");
 const app = express();
 const sequelize = require("./Database/db");
 const cors = require("cors");
-const nodemailer = require("nodemailer");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
@@ -17,9 +16,6 @@ app.use("/tramites", GestorTramites);
 app.use("/usuarios", GestorUsuarios);
 app.use("/solicitudes", GestorSolicitudes);
 
-//Modelos
-const Usuario = require("./Database/Models/Usuario");
-
 //Puerto
 const PORT = process.env.PORT;
 
@@ -29,15 +25,6 @@ app.use(cors());
 //Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
-//Correo
-var transporter = nodemailer.createTransport({
-  service: process.env.MAIL_SERVICE,
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASSWORD,
-  },
-});
 
 //Directorio
 app.use(express.static(__dirname));
@@ -266,38 +253,6 @@ app.post("/ModificarJSON", upload, function (req, res) {
       );
     });
   });
-});
-
-//Se va a transferir a GestorUsuarios.js
-// Editar usuario
-app.put("/EditarUsuario/:id", function (req, res) {
-  const userID = req.params.id;
-  const updatedData = req.body;
-
-  // Buscar el usuario por su ID
-  Usuario.findByPk(userID)
-    .then((usuario) => {
-      if (usuario) {
-        // Actualizar los datos del usuario con los nuevos datos
-        usuario
-          .update(updatedData)
-          .then((updatedUsuario) => {
-            // Enviar la respuesta con el usuario actualizado
-            res.send(updatedUsuario);
-          })
-          .catch((error) => {
-            console.log(error);
-            res.send({ Code: -1 });
-          });
-      } else {
-        // Si el usuario no existe, enviar un código de error
-        res.send({ Code: 0 });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
 });
 
 //Inicializar el servidor
