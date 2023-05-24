@@ -169,14 +169,16 @@ router.post("/nuevo", async function (req, res, next) {
     var validarCorreoElectronico = new RegExp(
       "^(?!$)[A-Za-z0-9]+([._-][A-Za-z0-9]+)*@[A-Za-z0-9]+([.-][A-Za-z0-9]+)*\\.[A-Za-z]{2,}(.[A-Za-z]{2,})?$"
     );
+    var validarSemestre = req.body.Estudiante
+      ? req.body.Estudiante.semestre > 0 && req.body.Estudiante.semestre < 15
+      : true;
 
     //Checamos si los datos recibidos tienen el formato valido.
     if (
       (validarMatriculaEstudiante.test(req.body.matricula) ||
         validarMatriculaEncargada.test(req.body.matricula)) &&
       validarCorreoElectronico.test(req.body.correo_e) &&
-      req.body.Estudiante.semestre > 0 &&
-      req.body.Estudiante.semestre < 15
+      validarSemestre
     ) {
       //Buscamos al usuario, para ver si existe.
       const usuario = await Usuario.findByPk(String(req.body.matricula), {
@@ -188,7 +190,7 @@ router.post("/nuevo", async function (req, res, next) {
           await Usuario.create({
             matricula: req.body.matricula,
             nombre_Completo: req.body.nombre_Completo,
-            contraseña: req.body.contraseña,
+            contraseña: req.body.matricula,
             correo_e: req.body.correo_e,
             hasTramiteOrActualizado: true,
           });
@@ -202,7 +204,7 @@ router.post("/nuevo", async function (req, res, next) {
           await Usuario.create({
             matricula: req.body.matricula,
             nombre_Completo: req.body.nombre_Completo,
-            contraseña: req.body.contraseña,
+            contraseña: req.body.matricula,
             correo_e: req.body.correo_e,
             hasTramiteOrActualizado: true,
           });
