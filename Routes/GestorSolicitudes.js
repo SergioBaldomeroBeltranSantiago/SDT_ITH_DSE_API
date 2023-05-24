@@ -102,7 +102,11 @@ const registrarError = winston.createLogger({
     winston.format.json()
   ),
   transports: [
-    new winston.transports.File({ filename: "error.log", level: "error" }),
+    new winston.transports.File({
+      filename: "error.log",
+      level: "error",
+      options: { flags: "a" },
+    }),
   ],
 });
 
@@ -363,15 +367,18 @@ router.post("/correo", async function (req, res, next) {
 
           var correoAdjuntos = [];
 
-          const adjuntosCarpeta =
-            path.join(__dirname, "..") + "/Documentos/Correos/Correo de inicio";
-
           const adjuntosArreglo = informacionJson.adjuntos.split(";");
 
-          for (var indice = 0; indice < adjuntosArreglo.length; indice++) {
-            correoAdjuntos.push({
-              path: adjuntosCarpeta + "/" + adjuntosArreglo[indice],
-            });
+          if (adjuntosArreglo.length > 0) {
+            const adjuntosCarpeta =
+              path.join(__dirname, "..") +
+              "/Documentos/Correos/Correo de inicio";
+
+            for (var indice = 0; indice < adjuntosArreglo.length; indice++) {
+              correoAdjuntos.push({
+                path: adjuntosCarpeta + "/" + adjuntosArreglo[indice],
+              });
+            }
           }
 
           const usuarioJSON_ado = {
@@ -677,12 +684,65 @@ router.get("/seguimiento", async function (req, res, next) {
         "..",
         "/JSON/seguimiento.json"
       );
+
       fs.readFile(plantillaCorreo, "utf8", (error, informacion) => {
         if (error) {
           //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
           next(error);
           return;
         }
+
+        const informacionJson = JSON.parse(informacion);
+        const solicitudJSON_ada = {
+          id_Solicitud: solicitudSeguir.id_Solicitud,
+        };
+        const usuarioJSON_ado = {
+          nombre_Completo: solicitudSeguir.Usuario.nombre_Completo,
+        };
+
+        var correoAdjuntos = [];
+
+        const adjuntosArreglo = informacionJson.adjuntos.split(";");
+
+        if (adjuntosArreglo.length > 0) {
+          const adjuntosCarpeta =
+            path.join(__dirname, "..") +
+            "/Documentos/Correos/Correo de seguimiento";
+
+          for (var indice = 0; indice < adjuntosArreglo.length; indice++) {
+            correoAdjuntos.push({
+              path: adjuntosCarpeta + "/" + adjuntosArreglo[indice],
+            });
+          }
+        }
+
+        const cuerpoParametrizado = informacionJson.destinatario.replace(
+          /\$([^$]+)\$/g,
+          (match, parametro) => {
+            if (usuarioJSON_ado.hasOwnProperty(parametro))
+              return usuarioJSON_ado[parametro];
+            if (solicitudJSON_ada.hasOwnProperty[parametro])
+              return solicitudJSON_ada[parametro];
+            return match;
+          }
+        );
+
+        var parametrosCorreo = {
+          from: process.env.MAIL_USER,
+          to: informacionJson.destinatario,
+          subject: informacionJson.asunto,
+          text: cuerpoParametrizado,
+          attachments: correoAdjuntos.length > 0 ? correoAdjuntos : [],
+        };
+
+        transporte.sendMail(parametrosCorreo, function (error, info) {
+          if (error) {
+            //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+            next(error);
+          } else {
+            res.sendStatus(info.accepted.length > 0 ? 200 : 400);
+          }
+        });
       });
     } else {
       res.sendStatus(404);
