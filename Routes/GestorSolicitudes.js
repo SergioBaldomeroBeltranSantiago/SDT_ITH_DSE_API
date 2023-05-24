@@ -345,13 +345,13 @@ router.put("/actualizar", async function (req, res, next) {
 });
 
 //Enviamos un correo con los requisitos de la solicitud.
-router.post("/correo", async function (req, res, next) {
+router.get("/correo", async function (req, res, next) {
   try {
     //Validaciones.
     var validarMatriculaEstudiante = new RegExp("^(B|b|C|c|D|d|M|m)?[0-9]{8}$");
 
-    if (validarMatriculaEstudiante.test(String(req.body.matricula))) {
-      const usuario = await Usuario.findByPk(String(req.body.matricula));
+    if (validarMatriculaEstudiante.test(String(req.query.matricula))) {
+      const usuario = await Usuario.findByPk(String(req.query.matricula));
 
       if (usuario) {
         const plantillaCorreo = path.join(__dirname, "..", "/JSON/inicio.json");
@@ -375,9 +375,9 @@ router.post("/correo", async function (req, res, next) {
               "/Documentos/Correos/Correo de inicio";
 
             for (var indice = 0; indice < adjuntosArreglo.length; indice++) {
-              correoAdjuntos.push({
-                path: adjuntosCarpeta + "/" + adjuntosArreglo[indice],
-              });
+              if(adjuntosArreglo[indice] !== ""){correoAdjuntos.push({
+              path: adjuntosCarpeta + "/" + adjuntosArreglo[indice],
+            });}
             }
           }
 
@@ -693,9 +693,11 @@ router.get("/seguimiento", async function (req, res, next) {
         }
 
         const informacionJson = JSON.parse(informacion);
+
         const solicitudJSON_ada = {
-          id_Solicitud: solicitudSeguir.id_Solicitud,
+          folio_Solicitud: solicitudSeguir.folio_Solicitud ?? "Folio de ejemplo",
         };
+
         const usuarioJSON_ado = {
           nombre_Completo: solicitudSeguir.Usuario.nombre_Completo,
         };
@@ -710,19 +712,20 @@ router.get("/seguimiento", async function (req, res, next) {
             "/Documentos/Correos/Correo de seguimiento";
 
           for (var indice = 0; indice < adjuntosArreglo.length; indice++) {
-            correoAdjuntos.push({
+            if(adjuntosArreglo[indice] !== ""){correoAdjuntos.push({
               path: adjuntosCarpeta + "/" + adjuntosArreglo[indice],
-            });
+            });}
           }
         }
 
-        const cuerpoParametrizado = informacionJson.destinatario.replace(
+        const cuerpoParametrizado = informacionJson.cuerpo.replace(
           /\$([^$]+)\$/g,
           (match, parametro) => {
             if (usuarioJSON_ado.hasOwnProperty(parametro))
-              return usuarioJSON_ado[parametro];
-            if (solicitudJSON_ada.hasOwnProperty[parametro])
+              {return usuarioJSON_ado[parametro];}else
+            if (solicitudJSON_ada.hasOwnProperty(parametro)){
               return solicitudJSON_ada[parametro];
+            }
             return match;
           }
         );
