@@ -346,15 +346,13 @@ router.post("/correo", async function (req, res, next) {
     //Validaciones.
     var validarMatriculaEstudiante = new RegExp("^(B|b|C|c|D|d|M|m)?[0-9]{8}$");
 
-    if (validarMatriculaEstudiante.test(req.body.matricula)) {
-      const usuario = await Usuario.findByPk(req.body.matricula);
+    if (validarMatriculaEstudiante.test(String(req.body.matricula))) {
+      const usuario = await Usuario.findByPk(String(req.body.matricula));
 
       if (usuario) {
-        const usuarioCorreo = usuario.correo_e;
-        const plantillaCorreoDirectorio =
-          path.join(__dirname, "..") + "/JSON/inicio.json";
+        const plantillaCorreo = path.join(__dirname, "..", "/JSON/inicio.json");
 
-        fs.readFile(plantillaCorreoDirectorio, "utf8", (error, informacion) => {
+        fs.readFile(plantillaCorreo, "utf8", (error, informacion) => {
           if (error) {
             //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
             next(error);
@@ -376,20 +374,36 @@ router.post("/correo", async function (req, res, next) {
             });
           }
 
+          const usuarioJSON_ado = {
+            matricula: usuario.matricula,
+            nombre_Completo: usuario.nombre_Completo,
+            correo_e: usuario.correo_e,
+          };
+
+          const correoModificado = informacionJson.destinatario.replace(
+            /\$([^$]+)\$/g,
+            (match, parametro) => {
+              if (usuarioJSON_ado.hasOwnProperty(parametro))
+                return usuarioJSON_ado[parametro];
+              return match;
+            }
+          );
+
           var parametrosCorreo = {
             from: process.env.MAIL_USER,
-            to: usuarioCorreo,
-            subject: informacionJson.titulo,
+            to: correoModificado,
+            subject: informacionJson.asunto,
             text: informacionJson.cuerpo,
             attachments: correoAdjuntos,
           };
 
-          transporte.sendMail(parametrosCorreo, function (error, informacion) {
+          transporte.sendMail(parametrosCorreo, function (error, info) {
             if (error) {
               //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
               next(error);
+            } else {
+              res.sendStatus(info.accepted.length > 0 ? 200 : 400);
             }
-            res.sendStatus(informacion.accepted.length > 0 ? 200 : 400);
           });
         });
       } else {
@@ -591,6 +605,44 @@ router.get("/consultar", async function (req, res, next) {
     solicitudEncontrada
       ? res.status(200).send(solicitudEncontrada)
       : res.sendStatus(404);
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
+
+//Descargar un documento asociado a una solicitud.
+router.get("/descarga", async function (req, res, next) {
+  try {
+    const documentoEncontrado = await Documento.findByPk(
+      String(req.query.id_Documento)
+    );
+
+    if (documentoEncontrado) {
+      console.log(documentoEncontrado);
+      res.download(documentoEncontrado.ruta_Documento, (error) => {
+        if (error) {
+          //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+          next(error);
+        }
+      });
+    } else {
+      res.sendStatus(404);
+    }
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
+
+//Correo enviado paraseguimiento a la aseguradora
+router.post("/seguimiento", async function (req, res, next) {
+  try {
+    const plantillaCorreo = path.join(
+      __dirname,
+      "..",
+      "/JSON/seguimiento.json"
+    );
   } catch (error) {
     //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
     next(error);
