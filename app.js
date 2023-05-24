@@ -2,12 +2,9 @@
 const express = require("express");
 const app = express();
 const sequelize = require("./Database/db");
-const { Op } = require("sequelize");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
-const moment = require("moment");
 const multer = require("multer");
-const reader = require("xlsx");
 const fs = require("fs");
 const path = require("path");
 
@@ -22,29 +19,6 @@ app.use("/solicitudes", GestorSolicitudes);
 
 //Modelos
 const Usuario = require("./Database/Models/Usuario");
-const Estudiante = require("./Database/Models/Estudiante");
-const Tramite = require("./Database/Models/Tramite");
-const Descripcion_Menu = require("./Database/Models/Descripcion_Menu");
-const Tramite_M = require("./Database/Models/Tramite_M");
-const Solicitud = require("./Database/Models/Solicitud");
-const Documento = require("./Database/Models/Documento");
-const Solicitud_Bitacora = require("./Database/Models/Solicitud_Bitacora");
-
-//Utilidades
-const estatusLexico = {
-  1: "Solicitud creada exitosamente, esperando documentos",
-  2: "Haz subido tus documentos con exito, espera a que la encargada los revise",
-  3: "Ha habido uno o varios errores en tus documentos, por favor revisalos y vuelve a subirlos",
-  4: "Los documentos han sido aceptados, favor de venir de manera presencial al departamento de servicios escolares para entregarlos en físico",
-  5: "Hemos recibido los documentos en persona, en poco tiempo seran enviados a la aseguradora",
-  6: "Se ha armado tu solicitud formal y ya ha sido enviada a la aseguradora",
-  7: "La solicitud ha sido rechazada por la aseguradora, revisa los documentos",
-  8: "Se han recibido nuevos documentos en formato digital, espera a que se revisen",
-  9: "Los nuevos documentos han sido rechazados, por favor sube nuevos documentos",
-  10: "La solicitud ha sido reenviada a la aseguradora",
-  11: "El finiquito ha sido enviado, necesitas venir en persona a firmarlo",
-  12: "Solicitud terminada",
-};
 
 //Puerto
 const PORT = process.env.PORT;
@@ -319,129 +293,6 @@ app.put("/EditarUsuario/:id", function (req, res) {
         // Si el usuario no existe, enviar un código de error
         res.send({ Code: 0 });
       }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
-});
-
-//Conseguir la lista de Solicitudes en el sistema, filtrada según el estatus
-app.post("/RequestApplicationList", function (req, res) {
-  Solicitud.findAll({
-    attributes: [
-      "id_Solicitud",
-      "fecha_Solicitud",
-      "fecha_Actualizacion",
-      "estatus_Actual",
-      "retroalimentacion_Actual",
-    ],
-    include: [
-      { model: Usuario, attributes: ["matricula", "nombre_Completo"] },
-      { model: Tramite, attributes: ["id_Tramite", "nombre_Tramite"] },
-    ],
-    where: { estatus_Actual: req.body.estatus },
-    order: [
-      ["fecha_Actualizacion", "ASC"],
-      ["fecha_Solicitud", "ASC"],
-    ],
-  })
-    .then((consult) => {
-      res.send(consult);
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-});
-
-//Correo enviado paraseguimiento a la aseguradora
-app.post("/SendSeguimientoEmail", function (req, res) {
-  var mailOptions = {
-    from: process.env.MAIL_USER,
-    to: req.body.destinatario,
-    subject: "Solicitud de seguimiento del seguro para " + req.body.nombre,
-    text:
-      'Buen dia, se le solicita una actualizacion sobre la solicitud con la guia de seguimiento "' +
-      req.body.folio +
-      '", a nombre de "' +
-      req.body.nombre +
-      '". \n Esto en relacion a la "SOLICITUD DE RECLAMACIÓN DE PAGO DE SINIESTRO" proveniende del Instituto Tecnologico de Hermosillo.' +
-      "\n \n Estamos al pendiente de una respuesta, gracias.",
-  };
-
-  transporter.sendMail(mailOptions, function (error, info) {
-    if (error) {
-      console.log(error);
-      res.send({ Code: -1 });
-    } else {
-      console.log("Correo enviado: " + info.response);
-      res.send({ Code: 1 });
-    }
-  });
-});
-
-//Se va a eliminar
-//Obtener documentos de la solicitud
-app.post("/RetrieveDocuments", function (req, res) {
-  Documento.findAll({
-    where: {
-      solicitud_Vinculada: req.body.solicitudID,
-    },
-  })
-    .then((result) => {
-      res.send(result);
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
-});
-
-//Obtener un solo documento para su descarga
-app.get("/ObtainDocument", function (req, res) {
-  Documento.findByPk(req.query.documentoID, {
-    attributes: ["nombre_Documento", "ruta_Documento"],
-  })
-    .then((result) => {
-      res.download(result.ruta_Documento, (err) => {
-        if (err) {
-          res.send({ Code: -1 });
-        }
-      });
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({ Code: -1 });
-    });
-});
-
-//Se va a eliminar
-app.post("/SubirUsuarios", function (req, res) {
-  Usuario.findOrCreate({
-    where: { matricula: req.body.matriculaUser },
-    defaults: {
-      matricula: req.body.matriculaUser,
-      nombre_Completo: req.body.nombreUser,
-      contraseña: req.body.contraseñaUser,
-      correo_e: req.body.correoUser,
-    },
-  })
-    .then((result) => {
-      Estudiante.findOrCreate({
-        where: { matricula_Estudiante: req.body.matriculaUser },
-        defaults: {
-          matricula_Estudiante: req.body.matriculaUser,
-          carrera: req.body.carreraUser,
-          semestre: req.body.semestreUser,
-        },
-      })
-        .then((result) => {
-          res.send({ Code: 1 });
-        })
-        .catch((error) => {
-          console.log(error);
-          res.send({ Code: -1 });
-        });
     })
     .catch((error) => {
       console.log(error);
