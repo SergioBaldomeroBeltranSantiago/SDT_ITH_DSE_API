@@ -328,7 +328,17 @@ router.put("/actualizar", async function (req, res, next) {
         fecha_Actualizacion: fecha_servidor,
         estatus_Actual: req.body.estatus_Actual,
         retroalimentacion_Actual:
-          req.body.retroalimentacion_Actual ?? estatus[req.body.estatus_Actual],
+          req.body.retroalimentacion_Actual !== undefined &&
+          req.body.retroalimentacion_Actual !== null &&
+          req.body.retroalimentacion_Actual !== ""
+            ? req.body.retroalimentacion_Actual
+            : estatus[req.body.estatus_Actual],
+        folio_Solicitud:
+          req.body.folio_Solicitud !== undefined &&
+          req.body.folio_Solicitud !== null &&
+          req.body.folio_Solicitud !== ""
+            ? req.body.folio_Solicitud
+            : null,
       });
 
       res.sendStatus(
@@ -375,9 +385,11 @@ router.get("/correo", async function (req, res, next) {
               "/Documentos/Correos/Correo de inicio";
 
             for (var indice = 0; indice < adjuntosArreglo.length; indice++) {
-              if(adjuntosArreglo[indice] !== ""){correoAdjuntos.push({
-              path: adjuntosCarpeta + "/" + adjuntosArreglo[indice],
-            });}
+              if (adjuntosArreglo[indice] !== "") {
+                correoAdjuntos.push({
+                  path: adjuntosCarpeta + "/" + adjuntosArreglo[indice],
+                });
+              }
             }
           }
 
@@ -695,7 +707,8 @@ router.get("/seguimiento", async function (req, res, next) {
         const informacionJson = JSON.parse(informacion);
 
         const solicitudJSON_ada = {
-          folio_Solicitud: solicitudSeguir.folio_Solicitud ?? "Folio de ejemplo",
+          folio_Solicitud:
+            solicitudSeguir.folio_Solicitud ?? "Folio de ejemplo",
         };
 
         const usuarioJSON_ado = {
@@ -712,18 +725,20 @@ router.get("/seguimiento", async function (req, res, next) {
             "/Documentos/Correos/Correo de seguimiento";
 
           for (var indice = 0; indice < adjuntosArreglo.length; indice++) {
-            if(adjuntosArreglo[indice] !== ""){correoAdjuntos.push({
-              path: adjuntosCarpeta + "/" + adjuntosArreglo[indice],
-            });}
+            if (adjuntosArreglo[indice] !== "") {
+              correoAdjuntos.push({
+                path: adjuntosCarpeta + "/" + adjuntosArreglo[indice],
+              });
+            }
           }
         }
 
         const cuerpoParametrizado = informacionJson.cuerpo.replace(
           /\$([^$]+)\$/g,
           (match, parametro) => {
-            if (usuarioJSON_ado.hasOwnProperty(parametro))
-              {return usuarioJSON_ado[parametro];}else
-            if (solicitudJSON_ada.hasOwnProperty(parametro)){
+            if (usuarioJSON_ado.hasOwnProperty(parametro)) {
+              return usuarioJSON_ado[parametro];
+            } else if (solicitudJSON_ada.hasOwnProperty(parametro)) {
               return solicitudJSON_ada[parametro];
             }
             return match;
