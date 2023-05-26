@@ -129,6 +129,7 @@ var transporte = nodemailer.createTransport({
 //Directorio
 router.use(express.static(__dirname));
 
+//Necesita retrabajo para utilizar codigos de respuesta HTTP STATUS
 //Obtendremos un reporte estadístico basandonos en un periodo de tiempo especificado por la maestra.
 router.get("/estadisticos", function (req, res) {
   //Obtenemos todas las solicitudes existentes en el sistema
@@ -640,7 +641,6 @@ router.get("/descarga", async function (req, res, next) {
     );
 
     if (documentoEncontrado) {
-      console.log(documentoEncontrado);
       res.download(documentoEncontrado.ruta_Documento, (error) => {
         if (error) {
           //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
