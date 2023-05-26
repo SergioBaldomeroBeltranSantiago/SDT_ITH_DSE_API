@@ -59,7 +59,7 @@ router.get("/consulta", async function (req, res, next) {
     const tramite = await Tramite.findByPk(req.query.id_Tramite, {
       include: [{ model: Tramite_M }],
     });
-    console.log(tramite);
+
     tramite ? res.status(200).send(tramite) : res.sendStatus(404);
   } catch (error) {
     //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
@@ -71,27 +71,22 @@ router.get("/consulta", async function (req, res, next) {
 router.post("/actualizar", async function (req, res, next) {
   try {
     const tramite_M = await Tramite_M.findByPk(req.body.Tramite_M.id_Tramite_M);
+
     if (tramite_M) {
       const tramite_MActualizado = await tramite_M.update({
-        titulo:
-          req.body.Tramite_M.titulo === ""
-            ? tramite_M.titulo
-            : req.body.Tramite_M.titulo,
         texto:
-          req.body.Tramite_M.texto === ""
-            ? tramite_M.texto
-            : req.body.Tramite_M.texto,
-        tipo:
-          req.body.Tramite_M.tipo === ""
-            ? tramite_M.tipo
-            : req.body.Tramite_M.tipo,
-        orden:
-          req.body.Tramite_M.orden === ""
-            ? tramite_M.orden
-            : req.body.Tramite_M.orden,
+          req.body.Tramite_M.texto !== ""
+            ? req.body.Tramite_M.texto
+            : tramite_M.texto,
       });
 
-      res.sendStatus(tramite_MActualizado ? 200 : 400);
+      const tramiteMetadataActualizada = await Tramite_M.findByPk(
+        req.body.Tramite_M.id_Tramite_M
+      );
+
+      tramiteMetadataActualizada
+        ? res.status(200).send(tramiteMetadataActualizada)
+        : res.sendStatus(400);
     } else {
       res.sendStatus(404);
     }
