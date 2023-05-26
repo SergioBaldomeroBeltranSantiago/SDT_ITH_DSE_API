@@ -11,10 +11,12 @@ const path = require("path");
 const GestorTramites = require("./Routes/GestorTramites");
 const GestorUsuarios = require("./Routes/GestorUsuarios");
 const GestorSolicitudes = require("./Routes/GestorSolicitudes");
+const GestorCorreos = require("./Routes/GestorCorreos");
 
 app.use("/tramites", GestorTramites);
 app.use("/usuarios", GestorUsuarios);
 app.use("/solicitudes", GestorSolicitudes);
+app.use("/correos", GestorCorreos);
 
 //Puerto
 const PORT = process.env.PORT;
@@ -261,9 +263,7 @@ app.listen(PORT, function () {
   sequelize
     .authenticate()
     .then(() => {
-      sequelize
-        .sync()
-        .then(() => console.log("Conexion exitosa"));
+      sequelize.sync().then(() => console.log("Conexion exitosa"));
     })
     .catch((error) => console.log("Error de conexion: ", error));
 });
