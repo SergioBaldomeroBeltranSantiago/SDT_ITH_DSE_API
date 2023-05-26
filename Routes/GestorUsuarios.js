@@ -68,7 +68,6 @@ router.get("/sesion", async function (req, res, next) {
 
       //Enviamos un status 200 si el usuario fue encontrado.
       //Enviamos un status 404 si el usuario no fue encontrado.
-      console.log(usuario);
       res.sendStatus(usuario ? 200 : 404);
     } else {
       //Enviamos un status 400 si los datos ingresados no cumplen con el formato valido.
@@ -131,6 +130,17 @@ const prepararEstudiantes = async () => {
   }
 };
 
+//Parte de alta masiva, invoca a preprararEstudiantes
+router.get("/preparar", async function (req, res, next) {
+  try {
+    prepararEstudiantes();
+    res.sendStatus(200);
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
+
 //Busca usuarios estudiantes, si estos no tienen una solicitud, ya sea en proceso o finalizada, se eliminan
 const eliminarEstudiantes = async () => {
   const listaEstudiantes = await Usuario.findAll({
@@ -156,9 +166,18 @@ const eliminarEstudiantes = async () => {
       where: { matricula: listaEstudiantesEliminar[indice].matricula },
     });
   }
-
-  console.log(listaEstudiantesEliminar);
 };
+
+//Parte de alta masiva, invoca a eliminarEstudiantes
+router.get("/eliminar", async function (req, res, next) {
+  try {
+    eliminarEstudiantes();
+    res.sendStatus(200);
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
+});
 
 //Crear un nuevo usuario, alta masiva
 router.post("/nuevo", async function (req, res, next) {
@@ -250,28 +269,6 @@ router.post("/nuevo", async function (req, res, next) {
   }
 });
 
-//Parte de alta masiva, invoca a preprararEstudiantes
-router.get("/preparar", async function (req, res, next) {
-  try {
-    prepararEstudiantes();
-    res.sendStatus(200);
-  } catch (error) {
-    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
-    next(error);
-  }
-});
-
-//Parte de alta masiva, invoca a eliminarEstudiantes
-router.get("/eliminar", async function (req, res, next) {
-  try {
-    eliminarEstudiantes();
-    res.sendStatus(200);
-  } catch (error) {
-    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
-    next(error);
-  }
-});
-
 //Actualiza solamente a un registro de usuario.
 const actualizarUsuario = async (
   usuarioEncontrado,
@@ -288,8 +285,6 @@ const actualizarUsuario = async (
     nuevaContraseña || contraseña || usuarioEncontrado.contraseña;
   const actualizarMatricula = nuevaMatricula || usuarioEncontrado.matricula;
 
-  console.log(actualizarMatricula);
-
   await usuarioEncontrado.update({
     nombre_Completo: String(actualizarNombreCompleto),
     correo_e: String(actualizarCorreoElectronico),
@@ -301,8 +296,6 @@ const actualizarUsuario = async (
   const actualizarUsuario = await Usuario.findByPk(
     String(usuarioEncontrado.matricula)
   );
-
-  console.log(actualizarUsuario);
 
   return actualizarUsuario;
 };
