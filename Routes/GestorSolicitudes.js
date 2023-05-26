@@ -341,9 +341,11 @@ router.put("/actualizar", async function (req, res, next) {
             : null,
       });
 
-      res.sendStatus(
-        solicitudBitacora ? (solicitudActualizada ? 200 : 400) : 400
-      );
+      solicitudBitacora
+        ? solicitudActualizada
+          ? res.sendStatus(200)
+          : res.sendStatus(400)
+        : res.sendStatus(400);
     } else {
       //Enviamos un status 404 si el registro no fue encontrado.
       res.sendStatus(404);
