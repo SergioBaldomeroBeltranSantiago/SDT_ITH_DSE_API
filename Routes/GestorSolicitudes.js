@@ -8,9 +8,11 @@ const XLSX = require("xlsx");
 const winston = require("winston");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
+const { Op } = require("sequelize");
 
 //Modelos
 const Usuario = require("../Database/Models/Usuario");
+const Estudiante = require("../Database/Models/Estudiante");
 const Solicitud = require("../Database/Models/Solicitud");
 const Tramite = require("../Database/Models/Tramite");
 const Documento = require("../Database/Models/Documento");
@@ -129,154 +131,331 @@ var transporte = nodemailer.createTransport({
 //Directorio
 router.use(express.static(__dirname));
 
-//Necesita retrabajo para utilizar codigos de respuesta HTTP STATUS
 //Obtendremos un reporte estadístico basandonos en un periodo de tiempo especificado por la maestra.
-router.get("/estadisticos", function (req, res) {
-  //Obtenemos todas las solicitudes existentes en el sistema
-  Solicitud.findAll({
-    attributes: ["fecha_Solicitud", "fecha_Actualizacion", "estatus_Actual"],
-    include: [
-      {
-        model: Usuario,
-        attributes: ["matricula", "nombre_Completo"],
-      },
-      {
-        model: Tramite,
-        attributes: ["nombre_Tramite"],
-      },
-    ],
-  })
-    .then((respuesta) => {
-      //Inicializamos el JSON de los registros de solicitudes.
-      var excelDatosRegistros = [{}];
+router.get("/reporte", async function (req, res, next) {
+  try {
+    //Validaciones
+    var fecha_Inicio = new Date(req.query.fecha_Inicio_Reporte).toISOString();
+    var fecha_Final = new Date(req.query.fecha_Final_Reporte).toISOString();
 
-      //Inicializamos los conteos estadísticos.
-      var conteoTramitesTotales = 0;
-      var conteoTramitesIniciados = 0;
-      var conteoTramitesFinalizados = 0;
-      var excelDatosConteos = [{}];
+    //Verificamos que la fecha de inicio sea menor que la fecha final
+    if (fecha_Final > fecha_Inicio) {
+      //En caso de que si, empezamos con los conteos
 
-      //Se recorren todas las solicitudes existentes.
-      for (var indice = 0; indice < respuesta.length; indice++) {
-        //Se crea un enunciado para una lectura mas facíl por cada solicitud existente.
-        var enunciado =
-          'El alumno "' +
-          respuesta[indice].Usuario.nombre_Completo +
-          '" con matricula "' +
-          respuesta[indice].Usuario.matricula +
-          '" ha solicitado el trámite de "' +
-          respuesta[indice].Tramite.nombre_Tramite +
-          '".\n Se solicito el dia: ' +
-          respuesta[indice].fecha_Solicitud +
-          " y al dia de: " +
-          respuesta[indice].fecha_Actualizacion +
-          ' la solicitud se encuentra en el estatus de "' +
-          estatus[respuesta[indice].estatus_Actual] +
-          '".';
+      //Solicitudes existentes en el sistema
+      const conteoSolicitudesTotales = await Solicitud.findAndCountAll({
+        attributes: [
+          "folio_Solicitud",
+          "fecha_Solicitud",
+          "fecha_Actualizacion",
+          "estatus_Actual",
+          "retroalimentacion_Actual",
+        ],
+        include: [
+          {
+            model: Usuario,
+            attributes: ["matricula", "nombre_Completo"],
+            include: [
+              { model: Estudiante, attributes: ["carrera", "semestre"] },
+            ],
+          },
+          {
+            model: Tramite,
+            attributes: ["nombre_Tramite"],
+          },
+        ],
+      });
 
-        //Se añade el registro a la colección para poder enviarlo a la hoja de excel.
-        excelDatosRegistros.push({
-          Matricula: respuesta[indice].Usuario.matricula,
-          "Nombre del Alumno": respuesta[indice].Usuario.nombre_Completo,
-          "Tramite solicitado": respuesta[indice].Tramite.nombre_Tramite,
-          "Fecha en la que se solicito": respuesta[indice].fecha_Solicitud,
-          "Ultimo estatus": estatus[respuesta[indice].estatus_Actual],
-          "Ultima fecha de actualizacion":
-            respuesta[indice].fecha_Actualizacion,
-          Registro: enunciado,
+      //Preguntamos si existen solicitudes en el sistema, ya que de lo contrario, no tiene caso seguir con el estadistico.
+      if (conteoSolicitudesTotales.count > 0) {
+        //Solicitudes terminadas en total.
+        const conteoSolicitudesFinalizadas = await Solicitud.findAndCountAll({
+          attributes: [
+            "folio_Solicitud",
+            "fecha_Solicitud",
+            "fecha_Actualizacion",
+            "estatus_Actual",
+            "retroalimentacion_Actual",
+          ],
+          include: [
+            {
+              model: Usuario,
+              attributes: ["matricula", "nombre_Completo"],
+              include: [
+                { model: Estudiante, attributes: ["carrera", "semestre"] },
+              ],
+            },
+            {
+              model: Tramite,
+              attributes: ["nombre_Tramite"],
+            },
+          ],
+          where: {
+            estatus_Actual: 12,
+          },
+        });
+        //Solicitudes no iniciadas en el periodo deseado, pero si terminadas.
+        const conteoSolicitudesFinalizadasNoIniciadas =
+          await Solicitud.findAndCountAll({
+            attributes: [
+              "folio_Solicitud",
+              "fecha_Solicitud",
+              "fecha_Actualizacion",
+              "estatus_Actual",
+              "retroalimentacion_Actual",
+            ],
+            include: [
+              {
+                model: Usuario,
+                attributes: ["matricula", "nombre_Completo"],
+                include: [
+                  { model: Estudiante, attributes: ["carrera", "semestre"] },
+                ],
+              },
+              {
+                model: Tramite,
+                attributes: ["nombre_Tramite"],
+              },
+            ],
+            where: {
+              fecha_Solicitud: {
+                [Op.notBetween]: [fecha_Inicio, fecha_Final],
+              },
+              fecha_Actualizacion: {
+                [Op.between]: [fecha_Inicio, fecha_Final],
+              },
+              estatus_Actual: 12,
+            },
+          });
+
+        //Solicitudes iniciadas y terminadas en el periodo deseado.
+        const conteoSolicitudesFinalizadasIniciadas =
+          await Solicitud.findAndCountAll({
+            attributes: [
+              "folio_Solicitud",
+              "fecha_Solicitud",
+              "fecha_Actualizacion",
+              "estatus_Actual",
+              "retroalimentacion_Actual",
+            ],
+            include: [
+              {
+                model: Usuario,
+                attributes: ["matricula", "nombre_Completo"],
+                include: [
+                  { model: Estudiante, attributes: ["carrera", "semestre"] },
+                ],
+              },
+              {
+                model: Tramite,
+                attributes: ["nombre_Tramite"],
+              },
+            ],
+            where: {
+              fecha_Solicitud: {
+                [Op.between]: [fecha_Inicio, fecha_Final],
+              },
+              fecha_Actualizacion: {
+                [Op.between]: [fecha_Inicio, fecha_Final],
+              },
+              estatus_Actual: 12,
+            },
+          });
+        //Solicitudes activas pero no terminadas en el periodo deseado.
+        const conteoSolicitudesActivas = await Solicitud.findAndCountAll({
+          attributes: [
+            "folio_Solicitud",
+            "fecha_Solicitud",
+            "fecha_Actualizacion",
+            "estatus_Actual",
+            "retroalimentacion_Actual",
+          ],
+          include: [
+            {
+              model: Usuario,
+              attributes: ["matricula", "nombre_Completo"],
+              include: [
+                { model: Estudiante, attributes: ["carrera", "semestre"] },
+              ],
+            },
+            {
+              model: Tramite,
+              attributes: ["nombre_Tramite"],
+            },
+          ],
+          where: {
+            fecha_Solicitud: {
+              [Op.between]: [fecha_Inicio, fecha_Final],
+            },
+            fecha_Actualizacion: {
+              [Op.between]: [fecha_Inicio, fecha_Final],
+            },
+            estatus_Actual: { [Op.lt]: 12 },
+          },
         });
 
-        //Contamos todas las solicitudes que tiene el sistema.
-        conteoTramitesTotales++;
+        //Ya que tenemos los conteos previstos, se procede a armar la primera colección de datos.
+        const conteoSolicitudes = [
+          {
+            Estadistica: "Solicitudes totales en el sistema ",
+            Conteo: Number(conteoSolicitudesTotales.count),
+          },
+          {
+            Estadistica:
+              "Solicitudes totales que se iniciaron en el periodo " +
+              fecha_Inicio.split("T")[0] +
+              " - " +
+              fecha_Final.split("T")[0],
+            Conteo:
+              Number(conteoSolicitudesFinalizadasIniciadas.count) +
+              Number(conteoSolicitudesActivas.count),
+          },
+          {
+            Estadistica:
+              "Solicitudes que se iniciaron pero aun no terminan en el periodo " +
+              fecha_Inicio.split("T")[0] +
+              " - " +
+              fecha_Final.split("T")[0],
+            Conteo: Number(conteoSolicitudesActivas.count),
+          },
+          {
+            Estadistica: "Solicitudes totales que han finalizado ",
+            Conteo: Number(conteoSolicitudesFinalizadas.count),
+          },
+          {
+            Estadistica:
+              "Solicitudes que se iniciaron y finalizaron en el periodo " +
+              fecha_Inicio.split("T")[0] +
+              " - " +
+              fecha_Final.split("T")[0],
+            Conteo: Number(conteoSolicitudesFinalizadasIniciadas.count),
+          },
+          {
+            Estadistica:
+              "Solicitudes que finalizaron pero no se iniciaron en el periodo " +
+              fecha_Inicio.split("T")[0] +
+              " - " +
+              fecha_Final.split("T")[0],
+            Conteo: Number(conteoSolicitudesFinalizadasNoIniciadas.count),
+          },
+        ];
 
-        //Obtenemos fechas importantes
-        var fechaInicio = new Date(req.query.fechaInicioInforme).getTime();
-        var fechaFinal = new Date(req.query.fechaFinalInforme).getTime();
-        var fechaSolicitud = new Date(
-          respuesta[indice].fecha_Solicitud
-        ).getTime();
-        var fechaActualizacion = new Date(
-          respuesta[indice].fecha_Actualizacion
-        ).getTime();
+        //Procedemos a crear la segunda colección de datos.
+        var datosRegistros = [];
 
-        //Checamos si la solicitud fue iniciada durante el periodo del informe.
-        if (fechaSolicitud >= fechaInicio && fechaSolicitud <= fechaFinal) {
-          conteoTramitesIniciados++;
-        }
-
-        //Checamos si la solicitud fue finalizada en este periodo seleccionado
-        if (
-          respuesta[indice].estatus_Actual === 12 &&
-          fechaActualizacion >= fechaInicio &&
-          fechaActualizacion <= fechaFinal
+        //Iteramos todas las solicitudes para crear los registros.
+        for (
+          var indice = 0;
+          indice < conteoSolicitudesTotales.count;
+          indice++
         ) {
-          conteoTramitesFinalizados++;
+          //Creamos una especie de enunciado, para mayor facilidad de lectura
+          var fechaSolicitudRegistro = new Date(
+            conteoSolicitudesTotales.rows[indice].fecha_Solicitud
+          )
+            .toISOString()
+            .split("T")[0];
+          var fechaActualizacionRegistro = new Date(
+            conteoSolicitudesTotales.rows[indice].fecha_Actualizacion
+          )
+            .toISOString()
+            .split("T")[0];
+          var enunciadoRegistro =
+            "El estudiante: " +
+            conteoSolicitudesTotales.rows[indice].Usuario.nombre_Completo +
+            ", con matricula: " +
+            conteoSolicitudesTotales.rows[indice].Usuario.matricula +
+            ", inicio una solicitud para el trámite: " +
+            conteoSolicitudesTotales.rows[indice].Tramite.nombre_Tramite +
+            ", el dia: " +
+            fechaSolicitudRegistro +
+            ".\nAl dia de: " +
+            fechaActualizacionRegistro +
+            " la solicitud se encuentra en el estatus: " +
+            estatus[conteoSolicitudesTotales.rows[indice].estatus_Actual] +
+            " y " +
+            (conteoSolicitudesTotales.rows[indice].folio_Solicitud
+              ? " cuenta con el folio: " +
+                conteoSolicitudesTotales.rows[indice].folio_Solicitud
+              : " no cuenta con un folio asignado.");
+
+          //Ahora creamos el resto del registro
+          var datoRegistro = {
+            Matricula: conteoSolicitudesTotales.rows[indice].Usuario.matricula,
+            "Nombre del solicitante":
+              conteoSolicitudesTotales.rows[indice].Usuario.nombre_Completo,
+            "Tramite solicitado":
+              conteoSolicitudesTotales.rows[indice].Tramite.nombre_Tramite,
+            "Fecha de inicio": fechaSolicitudRegistro,
+            "Ultimo estatus":
+              estatus[conteoSolicitudesTotales.rows[indice].estatus_Actual],
+            "Fecha de la ultima actualización": fechaActualizacionRegistro,
+            Folio:
+              conteoSolicitudesTotales.rows[indice].folio_Solicitud ??
+              "Folio no asignado",
+            Enunciado: enunciadoRegistro,
+          };
+
+          //Añadimos el registro al arreglo.
+          datosRegistros.push(datoRegistro);
         }
+
+        //Ya que tenemos todas las colecciones de datos necesarias, comenzamos a crear el archivo excel.
+        const excelLibro = XLSX.utils.book_new();
+
+        //Creamos dos hojas de excel, una para los registros, otra para los conteos.
+        const excelHojaRegistros = XLSX.utils.json_to_sheet(datosRegistros);
+        const excelHojaConteos = XLSX.utils.json_to_sheet(conteoSolicitudes);
+
+        //Se añaden ambas hojas al excel creado.
+        XLSX.utils.book_append_sheet(
+          excelLibro,
+          excelHojaRegistros,
+          "Registros"
+        );
+        XLSX.utils.book_append_sheet(excelLibro, excelHojaConteos, "Conteos");
+
+        //Procederemos a crear el archivo
+        //Primero verificamos que la carpeta ruta deseada exista
+        const fecha_Ahora = new Date().toISOString().split("T")[0];
+        const excelDirectorio =
+          path.join(__dirname, "..") + "/Documentos/Otros";
+        const excelArchivo =
+          excelDirectorio + "/Reporte." + fecha_Ahora + ".xlsx";
+
+        if (!fs.existsSync(excelDirectorio)) {
+          fs.mkdirSync(excelDirectorio, {
+            recursive: true,
+          });
+        }
+
+        //Creamos el archivo
+        XLSX.writeFile(excelLibro, excelArchivo);
+
+        //Enviamos el archivo para su descarga
+        res.download(
+          excelArchivo,
+          "Reporte." + fecha_Ahora + ".xlsx",
+          (error) => {
+            if (error) {
+              //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+              next(error);
+            }
+          }
+        );
+        return;
       }
 
-      //Se añaden los conteos a la coleccion.
-      excelDatosConteos.push({
-        Estadistica: "Solicitudes activas en el sistema",
-        Valor: conteoTramitesTotales,
-      });
-      excelDatosConteos.push({
-        Estadistica:
-          "Solicitudes iniciadas en el periodo: " +
-          req.query.fechaInicioInforme +
-          "|" +
-          req.query.fechaFinalInforme,
-        Valor: conteoTramitesIniciados,
-      });
-      excelDatosConteos.push({
-        Estadistica:
-          "Solicitudes finalizadas en el periodo: " +
-          req.query.fechaInicioInforme +
-          "|" +
-          req.query.fechaFinalInforme,
-        Valor: conteoTramitesFinalizados,
-      });
-
-      //Una vez que recorremos todas las solicitudes, se crea el archivo Excel.
-      const excelLibro = XLSX.utils.book_new();
-
-      //Se crea la hoja de excel con los registros obtenidos anteriormente.
-      const excelHojaRegistros = XLSX.utils.json_to_sheet(excelDatosRegistros);
-
-      //Se crea la hoja de excel con los conteos de las solicitudes.
-      const excelHojaConteos = XLSX.utils.json_to_sheet(excelDatosConteos);
-
-      //Se añade la hoja de excel de registros al archivo excel
-      XLSX.utils.book_append_sheet(excelLibro, excelHojaRegistros, "Registros");
-
-      //Se añade la hoja de excel de conteos al archivo excel
-      XLSX.utils.book_append_sheet(excelLibro, excelHojaConteos, "Conteos");
-
-      //Se crea el archivo excel en la carpeta Documentos/Otros de la raiz del sistema.
-      const excelDirectorio = path.join(__dirname, "..") + "/Documentos/Otros";
-      const excelArchivo = excelDirectorio + "/Estadistico.xlsx";
-      if (!fs.existsSync(excelDirectorio)) {
-        fs.mkdirSync(excelDirectorio, {
-          recursive: true,
-        });
-      }
-
-      if (fs.existsSync(excelArchivo)) {
-        fs.unlinkSync(excelArchivo);
-      }
-
-      XLSX.writeFile(excelLibro, excelArchivo);
-      res.send({
-        Codigo: 1,
-        Mensaje: "Estadístico terminado.",
-      });
-    })
-    .catch((error) => {
-      console.log(error);
-      res.send({
-        Codigo: 0,
-        Mensaje: error,
-      });
-    });
+      //Al no haber solicitudes existentes, tecnicamente no hay errores, pero tampoco se genera un archivo estadistico.
+      res.sendStatus(204);
+    } else {
+      //Se envia un status 400 por datos de entrada invalidos.
+      res.sendStatus(400);
+    }
+  } catch (error) {
+    //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
+    next(error);
+  }
 });
 
 //Crearemos una nueva solicitud.
