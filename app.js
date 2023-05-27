@@ -3,9 +3,6 @@ const express = require("express");
 const app = express();
 const sequelize = require("./Database/db");
 const cors = require("cors");
-const multer = require("multer");
-const fs = require("fs");
-const path = require("path");
 
 //Enrutamiento
 const GestorTramites = require("./Routes/GestorTramites");
