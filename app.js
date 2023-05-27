@@ -51,7 +51,7 @@ app.use(handleError);
 
 //Prueba
 app.get("/", function (req, res) {
-  res.send("Patata");
+  res.status(200).send("Patata");
 });
 
 //Inicializar el servidor
@@ -60,7 +60,17 @@ app.listen(PORT, function () {
   sequelize
     .authenticate()
     .then(() => {
-      sequelize.sync().then(() => console.log("Conexion exitosa"));
+      sequelize
+        .sync()
+        .then(() => console.log("Conexion exitosa"))
+        .catch((error) => {
+          registrarError.error(
+            "Error al sincronizar la base de datos: ",
+            error
+          );
+        });
     })
-    .catch((error) => console.log("Error de conexion: ", error));
+    .catch((error) =>
+      registrarError.error("Error al autentificar la base de datos: ", error)
+    );
 });
