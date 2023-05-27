@@ -3,6 +3,7 @@ const express = require("express");
 const app = express();
 const sequelize = require("./Database/db");
 const cors = require("cors");
+const winston = require("winston");
 
 //Enrutamiento
 const GestorTramites = require("./Routes/GestorTramites");
@@ -24,6 +25,29 @@ app.use(cors());
 //Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+//Errores
+const registrarError = winston.createLogger({
+  level: "error",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.File({
+      filename: "error.log",
+      level: "error",
+      options: { flags: "a" },
+    }),
+  ],
+});
+
+const handleError = (error, req, res, next) => {
+  registrarError(error);
+  res.sendStatus(500);
+};
+
+app.use(handleError);
 
 //Prueba
 app.get("/", function (req, res) {
