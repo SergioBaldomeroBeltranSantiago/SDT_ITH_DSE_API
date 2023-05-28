@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const cors = require("cors");
-const winston = require("winston");
+const errorHandler = require("../errorHandler");
 
 //Models
 const Tramite = require("../Database/Models/Tramite");
@@ -15,29 +15,7 @@ router.use(cors());
 //Middleware
 router.use(express.json({ limit: "10mb" }));
 router.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
-//Errores
-const registrarError = winston.createLogger({
-  level: "error",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: "error.log",
-      level: "error",
-      options: { flags: "a" },
-    }),
-  ],
-});
-
-const handleError = (error, req, res, next) => {
-  registrarError(error);
-  res.sendStatus(500);
-};
-
-router.use(handleError);
+router.use(errorHandler);
 
 //Revisitar
 //Envia todos los trámites existentes en formato de lista, para un botón de selección utilizado para la administración de los trámites

@@ -4,8 +4,7 @@ const router = express.Router();
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
-const XLSX = require("xlsx");
-const winston = require("winston");
+const errorHandler = require("../errorHandler");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
 
@@ -70,29 +69,7 @@ router.use(
     limit: "10mb",
   })
 );
-
-//Errores
-const registrarError = winston.createLogger({
-  level: "error",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: "error.log",
-      level: "error",
-      options: { flags: "a" },
-    }),
-  ],
-});
-
-const handleError = (error, req, res, next) => {
-  registrarError(error);
-  res.sendStatus(500);
-};
-
-router.use(handleError);
+router.use(errorHandler);
 
 //Correo
 var transporte = nodemailer.createTransport({

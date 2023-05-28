@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const cors = require("cors");
-const winston = require("winston");
+const errorHandler = require("../errorHandler");
 
 //Modelos
 const Usuario = require("../Database/Models/Usuario");
@@ -24,29 +24,7 @@ router.use(
     limit: "10mb",
   })
 );
-
-//Errores
-const registrarError = winston.createLogger({
-  level: "error",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: "error.log",
-      level: "error",
-      options: { flags: "a" },
-    }),
-  ],
-});
-
-const handleError = (error, req, res, next) => {
-  registrarError(error);
-  res.sendStatus(500);
-};
-
-router.use(handleError);
+router.use(errorHandler);
 
 //Login
 router.get("/sesion", async function (req, res, next) {
