@@ -285,7 +285,6 @@ router.post("/nuevo", async function (req, res, next) {
       res.sendStatus(400);
     }
   } catch (error) {
-    console.log(error);
     //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
     next(error);
   }
