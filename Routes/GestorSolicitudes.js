@@ -655,8 +655,8 @@ router.get("/consulta", async function (req, res, next) {
           ],
           where: { estudiante_Solicitante: req.query.matricula },
           order: [
-            ["fecha_Solicitud", "ASC"],
-            ["fecha_Actualizacion", "ASC"],
+            ["fecha_Solicitud", "DESC"],
+            ["fecha_Actualizacion", "DESC"],
           ],
         });
         //Enviamos la lista de solicitudes del usuario, incluso si esta vacia
