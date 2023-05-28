@@ -207,27 +207,46 @@ router.post("/nuevo", async function (req, res, next) {
       const usuario = await Usuario.findByPk(String(req.body.matricula), {
         include: [{ model: Estudiante }],
       });
+
       if (!usuario) {
         //Si no existe, se crea.
         if (req.body.Estudiante !== null) {
           await Usuario.create({
-            matricula: req.body.matricula,
+            matricula:
+              req.body.matricula.length === 9
+                ? String(req.body.matricula).charAt(0).toUpperCase() +
+                  String(req.body.matricula).slice(1)
+                : String(req.body.matricula),
             nombre_Completo: req.body.nombre_Completo,
-            contraseña: req.body.matricula,
+            contraseña:
+              req.body.matricula.length === 9
+                ? String(req.body.matricula).slice(1)
+                : String(req.body.matricula),
             correo_e: req.body.correo_e,
             hasTramiteOrActualizado: true,
           });
           await Estudiante.create({
             carrera: req.body.Estudiante.carrera,
             semestre: req.body.Estudiante.semestre,
-            matricula_Estudiante: req.body.matricula,
+            matricula_Estudiante:
+              req.body.matricula.length === 9
+                ? String(req.body.matricula).charAt(0).toUpperCase() +
+                  String(req.body.matricula).slice(1)
+                : String(req.body.matricula),
           });
           res.sendStatus(200);
         } else {
           await Usuario.create({
-            matricula: req.body.matricula,
+            matricula:
+              req.body.matricula.length === 9
+                ? String(req.body.matricula).charAt(0).toUpperCase() +
+                  String(req.body.matricula).slice(1)
+                : String(req.body.matricula),
             nombre_Completo: req.body.nombre_Completo,
-            contraseña: req.body.matricula,
+            contraseña:
+              req.body.matricula.length === 9
+                ? String(req.body.matricula).slice(1)
+                : String(req.body.matricula),
             correo_e: req.body.correo_e,
             hasTramiteOrActualizado: true,
           });
@@ -239,7 +258,6 @@ router.post("/nuevo", async function (req, res, next) {
           await usuario.update({
             matricula: req.body.nuevaMatricula ?? usuario.matricula,
             nombre_Completo: req.body.nombre_Completo,
-            contraseña: req.body.contraseña,
             correo_e: req.body.correo_e,
             hasTramiteOrActualizado: true,
           });
@@ -256,7 +274,6 @@ router.post("/nuevo", async function (req, res, next) {
           await usuario.update({
             matricula: req.body.nuevaMatricula ?? req.body.matricula,
             nombre_Completo: req.body.nombre_Completo,
-            contraseña: req.body.contraseña,
             correo_e: req.body.correo_e,
             hasTramiteOrActualizado: true,
           });
@@ -268,41 +285,11 @@ router.post("/nuevo", async function (req, res, next) {
       res.sendStatus(400);
     }
   } catch (error) {
+    console.log(error);
     //Cualquier error del sistema, se envia un status 500, se crea un log dentro del servidor.
     next(error);
   }
 });
-
-//Actualiza solamente a un registro de usuario.
-const actualizarUsuario = async (
-  usuarioEncontrado,
-  nuevaMatricula,
-  contraseña,
-  nuevaContraseña,
-  correo_e,
-  nombre_Completo
-) => {
-  const actualizarNombreCompleto =
-    nombre_Completo || usuarioEncontrado.nombre_Completo;
-  const actualizarCorreoElectronico = correo_e || usuarioEncontrado.correo_e;
-  const actualizarContraseña =
-    nuevaContraseña || contraseña || usuarioEncontrado.contraseña;
-  const actualizarMatricula = nuevaMatricula || usuarioEncontrado.matricula;
-
-  await usuarioEncontrado.update({
-    nombre_Completo: String(actualizarNombreCompleto),
-    correo_e: String(actualizarCorreoElectronico),
-    contraseña: String(actualizarContraseña),
-    matricula: String(actualizarMatricula),
-    hasTramiteOrActualizado: true,
-  });
-
-  const actualizarUsuario = await Usuario.findByPk(
-    String(usuarioEncontrado.matricula)
-  );
-
-  return actualizarUsuario;
-};
 
 //Actualizar un usuario, si se quiere cambiar la matricula
 const actualizarUsuarioCambiarMatricula = async (
@@ -322,10 +309,6 @@ const actualizarUsuarioCambiarMatricula = async (
         ParametrosEntrada.nombre_Completo !== ""
           ? ParametrosEntrada.nombre_Completo
           : UsuarioActual.nombre_Completo,
-      contraseña:
-        ParametrosEntrada.contraseña !== ""
-          ? ParametrosEntrada.contraseña
-          : UsuarioActual.contraseña,
       correo_e:
         ParametrosEntrada.correo_e !== ""
           ? ParametrosEntrada.correo_e
@@ -386,12 +369,6 @@ const actualizarUsuarioMantenerMatricula = async (
           ParametrosEntrada.nombre_Completo !== ""
             ? ParametrosEntrada.nombre_Completo
             : UsuarioActual.nombre_Completo,
-        contraseña:
-          ParametrosEntrada.nuevaContraseña !== ""
-            ? ParametrosEntrada.nuevaContraseña
-            : ParametrosEntrada.contraseña !== ""
-            ? ParametrosEntrada.contraseña
-            : UsuarioActual.contraseña,
         correo_e:
           ParametrosEntrada.correo_e !== ""
             ? ParametrosEntrada.correo_e
