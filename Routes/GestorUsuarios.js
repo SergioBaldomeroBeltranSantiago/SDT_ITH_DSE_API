@@ -274,10 +274,11 @@ const actualizarUsuarioCambiarMatricula = async (
   ParametrosEntrada
 ) => {
   try {
-    const checarInexistencia = await Usuario.findByPk(
-      ParametrosEntrada.nuevaMatricula
-    );
-    if (checarInexistencia) return Number(0);
+    const checarInexistencia = await Usuario.findOne(
+      {where:{matricula: ParametrosEntrada.nuevaMatricula}}
+    ) || [];
+
+    if (checarInexistencia.length>0) return Number(0);
 
     //Creamos un usuario "temporal"
     const nuevoUsuario = await Usuario.create({
@@ -286,10 +287,12 @@ const actualizarUsuarioCambiarMatricula = async (
         ParametrosEntrada.nombre_Completo !== ""
           ? ParametrosEntrada.nombre_Completo
           : UsuarioActual.nombre_Completo,
+      contraseña: UsuarioActual.contraseña,
       correo_e:
         ParametrosEntrada.correo_e !== ""
           ? ParametrosEntrada.correo_e
           : UsuarioActual.correo_e,
+
       hasTramiteOrActualizado: true,
     });
 
