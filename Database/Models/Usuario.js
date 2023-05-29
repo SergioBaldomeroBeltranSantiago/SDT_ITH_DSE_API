@@ -17,9 +17,20 @@ Usuario.init(
       type: DataTypes.STRING(8),
       allowNull: false,
     },
-    correo_e: { type: DataTypes.TEXT },
+    correo_e: {
+      type: DataTypes.TEXT,
+    },
+    hasTramiteOrActualizado: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
   },
-  { sequelize, modelName: "Usuario", tableName: "Usuarios", timestamps: false }
+  {
+    sequelize,
+    modelName: "Usuario",
+    tableName: "Usuarios",
+    timestamps: false,
+  }
 );
 
 module.exports = Usuario;
