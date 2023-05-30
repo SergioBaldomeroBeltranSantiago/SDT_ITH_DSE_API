@@ -10,6 +10,15 @@ const sequelize = new Sequelize(
     host: database_config.host,
     dialect: database_config.dialect,
     port: database_config.port,
+    dialectOptions: {
+      options: {
+        encrypt: true,
+        trustServerCertificate: true,
+        cryptoCredentialsDetails: {
+          minVersion: "TLSv1",
+        },
+      },
+    },
   }
 );
 
